@@ -19,7 +19,9 @@ api.interceptors.response.use(
   (err) => {
     if (err.response?.status === 401) {
       localStorage.removeItem("findit_token");
-      window.location.href = "/login";
+      localStorage.removeItem("findit_user");
+      // Redirect to root — SPA uses page state, not URL routes
+      window.location.href = "/";
     }
     return Promise.reject(err);
   }

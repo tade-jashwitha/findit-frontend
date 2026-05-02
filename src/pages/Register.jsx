@@ -1,163 +1,133 @@
 // src/pages/Register.jsx
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button, Card, Input } from '../components/UI';
-import { toast } from '../utils/toast';
-import { useFormValidation } from '../hooks/useFormValidation';
+import { useState } from "react";
+import T from "../utils/tokens";
+import { Input, Button } from "../components/shared";
+import { authAPI, authHelpers, getErrorMessage } from "../utils/api";
+import AILogo from "../components/AILogo";
 
-import { authAPI, authHelpers, getErrorMessage } from '../utils/api';
-export default function Register() {
-  const navigate  = useNavigate();
+export default function Register({ setPage, setUser }) {
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "", studentId: "", phone: "" });
   const [loading, setLoading] = useState(false);
+  const [error,   setError]   = useState("");
 
-  const { values, errors, handleChange, validate } = useFormValidation(
-    { name: '', email: '', password: '', confirm: '' },
-    {
-      name:     { required: true },
-      email:    { required: true, isEmail: true },
-      password: { required: true, minLength: 6  },
-      confirm:  { required: true, match: 'password' },
-    }
-  );
+  const set = key => e => setForm(f => ({ ...f, [key]: e.target.value }));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const strength = (() => {
+    const p = form.password;
+    if (!p) return null;
+    if (p.length < 6)  return { label: "Too short", color: T.red,   w: "25%" };
+    if (p.length < 8)  return { label: "Weak",      color: T.amber, w: "50%" };
+    if (p.length < 12) return { label: "Good",      color: T.blue,  w: "75%" };
+    return               { label: "Strong",    color: T.green, w: "100%" };
+  })();
 
-    setLoading(true);
+  const handleRegister = async () => {
+    if (!form.name.trim())  { setError("Name is required"); return; }
+    if (!form.email.trim()) { setError("Email is required"); return; }
+    if (form.password.length < 6) { setError("Password must be at least 6 characters"); return; }
+    if (form.password !== form.confirm) { setError("Passwords do not match"); return; }
+
+    setLoading(true); setError("");
     try {
-      const data = await api.auth.register(values.name, values.email, values.password);
-        authHelpers.setToken(data.token);
-        authHelpers.setUser(data.user);
-      toast.success('Account created! Welcome to FindIt 🎉');
-      navigate('/');
+      const payload = { name: form.name, email: form.email, password: form.password };
+      if (form.studentId) payload.studentId = form.studentId;
+      if (form.phone)     payload.phone     = form.phone;
+
+      const res = await authAPI.register(payload);
+      const { token, data: user } = res.data;
+      authHelpers.setToken(token);
+      authHelpers.setUser(user);
+      setUser(user);
+      setPage("home");
     } catch (err) {
-      toast.error(err.message || 'Registration failed. Please try again.');
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
 
-  // Password strength indicator
-  const strength = (() => {
-    const p = values.password;
-    if (!p) return null;
-    if (p.length < 6)  return { label: 'Too short',  color: 'var(--c-red)',   width: '25%'  };
-    if (p.length < 8)  return { label: 'Weak',        color: 'var(--c-amber)', width: '50%'  };
-    if (p.length < 12) return { label: 'Good',        color: 'var(--c-blue)',  width: '75%'  };
-    return               { label: 'Strong',      color: 'var(--c-green)', width: '100%' };
-  })();
-
   return (
     <div style={{
-      minHeight: 'calc(100vh - 64px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 24, background: 'var(--c-bg)',
+      minHeight: "100vh", background: T.bg,
+      display: "flex", flexDirection: "column",
+      justifyContent: "center", padding: "40px 20px",
+      position: "relative", overflow: "hidden",
+      fontFamily: T.font, color: T.text,
     }}>
-      <div className="animate-fadeUp" style={{ width: '100%', maxWidth: 440 }}>
+      {/* Background grid */}
+      <div style={{
+        position: "absolute", inset: 0, zIndex: 0,
+        backgroundImage: `linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)`,
+        backgroundSize: "40px 40px",
+        maskImage: "radial-gradient(ellipse 80% 80% at 50% 0%, black, transparent)",
+      }} />
+      <div style={{ position: "absolute", top: -100, left: "50%", transform: "translateX(-50%)", width: 500, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 65%)", pointerEvents: "none", zIndex: 0 }} />
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 44, marginBottom: 12 }}>🎓</div>
+      <div style={{ maxWidth: 420, width: "100%", margin: "0 auto", animation: "fadeUp 0.5s ease both", position: "relative", zIndex: 1 }}>
+
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ display: "inline-block", animation: "float 4s ease infinite" }}>
+            <AILogo size={48} />
+          </div>
           <h1 style={{
-            fontFamily: 'var(--font-display)', fontWeight: 800,
-            fontSize: 28, letterSpacing: '-0.5px',
-          }}>
-            Join FindIt
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--c-text2)', marginTop: 6 }}>
-            Create your campus lost &amp; found account
-          </p>
+            marginTop: 14, fontSize: 26, fontWeight: 900, letterSpacing: "-1px",
+            background: T.gradText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>Join CampusFind</h1>
+          <p style={{ color: T.text2, fontSize: 13, marginTop: 4 }}>Create your campus account</p>
         </div>
 
-        <Card style={{ padding: 28 }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-            <Input
-              label="Full Name"
-              type="text"
-              placeholder="Riya Sharma"
-              icon="👤"
-              value={values.name}
-              onChange={handleChange('name')}
-              error={errors.name}
-              autoComplete="name"
-            />
-
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="you@campus.edu"
-              icon="📧"
-              value={values.email}
-              onChange={handleChange('email')}
-              error={errors.email}
-              autoComplete="email"
-            />
-
-            <div>
-              <Input
-                label="Password"
-                type="password"
-                placeholder="Minimum 6 characters"
-                icon="🔒"
-                value={values.password}
-                onChange={handleChange('password')}
-                error={errors.password}
-                autoComplete="new-password"
-              />
-              {/* Password strength bar */}
-              {strength && (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{
-                    height: 4, background: 'var(--c-surface2)',
-                    borderRadius: 999, overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      height: '100%', width: strength.width,
-                      background: strength.color,
-                      transition: 'width 0.4s ease, background 0.3s ease',
-                      borderRadius: 999,
-                    }} />
-                  </div>
-                  <span style={{ fontSize: 11, color: strength.color, fontWeight: 600, marginTop: 4, display: 'block' }}>
-                    {strength.label}
-                  </span>
-                </div>
-              )}
+        {/* Card */}
+        <div style={{
+          background: T.surface, border: `1px solid ${T.border}`,
+          borderRadius: T.rXl, padding: "28px 24px",
+        }}>
+          {error && (
+            <div style={{
+              background: T.redBg, border: `1px solid ${T.redBord}`,
+              borderRadius: T.r, padding: "10px 14px", marginBottom: 20,
+              fontSize: 13, color: T.red, display: "flex", alignItems: "center", gap: 8,
+            }}>
+              <span>⚠</span> {error}
             </div>
+          )}
 
-            <Input
-              label="Confirm Password"
-              type="password"
-              placeholder="Re-enter your password"
-              icon="🔒"
-              value={values.confirm}
-              onChange={handleChange('confirm')}
-              error={errors.confirm}
-              autoComplete="new-password"
-            />
+          <Input label="Full Name"  type="text"     placeholder="Riya Sharma"      icon="👤" value={form.name}      onChange={set("name")} required />
+          <Input label="Email"      type="email"    placeholder="you@campus.edu"    icon="✉️" value={form.email}     onChange={set("email")} required />
+          <Input label="Student ID" type="text"     placeholder="Optional"          icon="🪪" value={form.studentId} onChange={set("studentId")} />
+          <Input label="Phone"      type="tel"      placeholder="Optional"          icon="📱" value={form.phone}     onChange={set("phone")} />
+          <Input label="Password"   type="password" placeholder="Min. 6 characters" icon="🔒" value={form.password}  onChange={set("password")} required />
 
-            {/* Terms */}
-            <p style={{ fontSize: 12, color: 'var(--c-text3)', textAlign: 'center' }}>
-              By signing up you agree to our{' '}
-              <Link to="/terms" style={{ color: 'var(--c-accent)' }}>Terms of Service</Link>
-              {' '}and{' '}
-              <Link to="/privacy" style={{ color: 'var(--c-accent)' }}>Privacy Policy</Link>.
-            </p>
+          {strength && (
+            <div style={{ marginTop: -10, marginBottom: 16 }}>
+              <div style={{ height: 3, background: T.border, borderRadius: 999, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: strength.w, background: strength.color, transition: "all 0.4s ease", borderRadius: 999 }} />
+              </div>
+              <span style={{ fontSize: 11, color: strength.color, fontWeight: 600, marginTop: 4, display: "block" }}>{strength.label}</span>
+            </div>
+          )}
 
-            <Button type="submit" fullWidth size="lg" loading={loading}>
-              {loading ? 'Creating account...' : 'Create Account'}
-            </Button>
-          </form>
-        </Card>
+          <Input label="Confirm Password" type="password" placeholder="Re-enter password" icon="🔒" value={form.confirm} onChange={set("confirm")} required />
 
-        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--c-text2)', marginTop: 20 }}>
-          Already have an account?{' '}
-          <Link to="/login" style={{ color: 'var(--c-accent)', fontWeight: 600, textDecoration: 'none' }}>
-            Sign in
-          </Link>
-        </p>
+          <p style={{ fontSize: 11, color: T.text3, textAlign: "center", marginBottom: 20 }}>
+            By signing up you agree to our{" "}
+            <span style={{ color: "#A78BFA", cursor: "pointer" }}>Terms of Service</span>
+            {" "}and{" "}
+            <span style={{ color: "#A78BFA", cursor: "pointer" }}>Privacy Policy</span>.
+          </p>
+
+          <Button fullWidth size="lg" loading={loading} onClick={handleRegister}>
+            {loading ? "Creating account…" : "Create Account 🎉"}
+          </Button>
+
+          <p style={{ textAlign: "center", fontSize: 13, color: T.text2, marginTop: 20 }}>
+            Already have an account?{" "}
+            <button onClick={() => setPage("login")} style={{
+              background: "none", border: "none", color: "#A78BFA",
+              fontWeight: 700, cursor: "pointer", fontSize: 13, fontFamily: T.font,
+            }}>Sign in →</button>
+          </p>
+        </div>
       </div>
     </div>
   );

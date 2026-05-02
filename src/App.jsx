@@ -1,81 +1,77 @@
-// App.jsx — root component: routing + shared state
-import { useState, useCallback } from "react";
-import { Navbar }          from "./components/Navbar";
-import ToastContainer from './components/ToastContainer';
-import Home       from "./pages/Home";
-import Browse     from "./pages/Browse";
-import Report     from "./pages/Report";
-import AIMatch    from "./pages/AIMatch";
-import Login      from "./pages/Login";
-import Register   from "./pages/Register";
-import Dashboard  from "./pages/Dashboard";
-import { MOCK_ITEMS } from "./utils/constants";
-
-
+// src/App.jsx — CampusFind app shell
+import { useState, useCallback, useEffect } from "react";
+import { Navbar }       from "./components/Navbar";
+import ToastContainer   from "./components/ToastContainer";
+import SplashScreen     from "./components/SplashScreen";
+import Home             from "./pages/Home";
+import Browse           from "./pages/Browse";
+import Report           from "./pages/Report";
+import AIMatch          from "./pages/AIMatch";
+import Login            from "./pages/Login";
+import Register         from "./pages/Register";
+import Dashboard        from "./pages/Dashboard";
+import T                from "./utils/tokens";
 
 export default function App() {
-  const [page,     setPage]     = useState("home");
-  const [darkMode, setDarkMode] = useState(false);
-  const [user,     setUser]     = useState(null);
-  const [items,    setItems]    = useState(MOCK_ITEMS);
+  const [user, setUser] = useState(() => {
+    try { const s = localStorage.getItem("findit_user"); return s ? JSON.parse(s) : null; }
+    catch { return null; }
+  });
 
-  // Toggle save/bookmark on any item
+  const [page,    setPage]    = useState("splash");
+  const [savedIds, setSavedIds] = useState([]);
+
+  const handleSplashFinish = useCallback(() => {
+    try {
+      const s = localStorage.getItem("findit_user");
+      setPage(s ? "home" : "login");
+    } catch { setPage("login"); }
+  }, []);
+
+  useEffect(() => {
+    if (user) localStorage.setItem("findit_user", JSON.stringify(user));
+    else localStorage.removeItem("findit_user");
+  }, [user]);
+
+  const handleSetUser = useCallback((newUser) => {
+    setUser(newUser);
+    setPage(newUser ? "home" : "login");
+  }, []);
+
+  const navigate = useCallback((target) => {
+    if (["report", "dashboard"].includes(target) && !user) setPage("login");
+    else setPage(target);
+  }, [user]);
+
   const toggleSave = useCallback((id) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, saved: !item.saved } : item));
+    setSavedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
 
-  // Add a newly reported item to the top of the list
-  const addItem = useCallback((newItem) => {
-    setItems(prev => [newItem, ...prev]);
-  }, []);
+  // ── Splash ──
+  if (page === "splash") return <SplashScreen onFinish={handleSplashFinish} />;
 
-  const savedCount = items.filter(i => i.saved).length;
+  // ── Auth (no navbar) ──
+  if (page === "login") return (
+    <><Login setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>
+  );
+  if (page === "register") return (
+    <><Register setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>
+  );
 
+  // ── Main app ──
   return (
-    <div
-      data-theme={darkMode ? "dark" : "light"}
-      style={{ minHeight: "100vh", background: "var(--c-bg)", color: "var(--c-text)", display: "flex", flexDirection: "column" }}
-    >
-      <Navbar
-        page={page}
-        setPage={setPage}
-        darkMode={darkMode}
-        toggleDark={() => setDarkMode(d => !d)}
-        user={user}
-        setUser={setUser}
-        savedCount={savedCount}
-      />
+    <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
+      <Navbar page={page} setPage={navigate} user={user} setUser={handleSetUser} />
 
-      <main style={{ flex: 1 }}>
-        {page === "home" && <Home setPage={setPage} items={items} onToggleSave={toggleSave} />}
-        {page === "browse" && <Browse onToggleSave={toggleSave} />}
-        {page === "report"    && <Report    user={user} setPage={setPage} onAddItem={addItem} />}
-        {page === "ai"        && <AIMatch   items={items} />}
-        {page === "login"     && <Login     setPage={setPage} setUser={setUser} />}
-        {page === "register"  && <Register  setPage={setPage} setUser={setUser} />}
-        {page === "dashboard" && user && <Dashboard user={user} items={items} onToggleSave={toggleSave} setPage={setPage} />}
+      <main>
+        {page === "home"      && <Home      setPage={navigate} onToggleSave={toggleSave} />}
+        {page === "browse"    && <Browse    setPage={navigate} user={user} onToggleSave={toggleSave} />}
+        {page === "report"    && user && <Report user={user} setPage={navigate} />}
+        {page === "report"    && !user && navigate("login")}
+        {page === "ai"        && <AIMatch   setPage={navigate} />}
+        {page === "dashboard" && user  && <Dashboard user={user} setPage={navigate} />}
+        {page === "dashboard" && !user && navigate("login")}
       </main>
-
-      {/* Footer */}
-      <footer style={{ background: "var(--c-surface)", borderTop: "1px solid var(--c-border)", padding: "28px 24px" }}>
-        <div style={{ maxWidth: 1140, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
-          <div>
-            <p style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, color: "var(--c-accent)", marginBottom: 2 }}>
-              Find<span style={{ color: "var(--c-text)" }}>It</span>
-            </p>
-            <p style={{ fontSize: 12, color: "var(--c-text3)" }}>Campus Lost &amp; Found · Built with ❤️ for students</p>
-          </div>
-          <div style={{ display: "flex", gap: 20 }}>
-            {[["home","Home"],["browse","Browse"],["report","Report"],["ai","AI Match"]].map(([id, label]) => (
-              <button key={id} onClick={() => setPage(id)} style={{
-                background: "none", border: "none", cursor: "pointer",
-                fontSize: 13, color: "var(--c-text2)",
-                fontFamily: "var(--font-display)", fontWeight: 500,
-              }}>{label}</button>
-            ))}
-          </div>
-        </div>
-      </footer>
 
       <ToastContainer />
     </div>

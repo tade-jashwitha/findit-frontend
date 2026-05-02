@@ -1,133 +1,221 @@
-// pages/Home.jsx
-import { useState } from "react";
-import { Card, Button } from "../components/UI";
-import { ItemCard } from "../components/ItemCard";
-import { ItemModal } from "../components/ItemModal";
-import { STATS } from "../utils/constants";
+// src/pages/Home.jsx
+import { useState, useEffect, useCallback } from "react";
+import T from "../utils/tokens";
+import { Card, Badge, Skeleton, BottomNav } from "../components/shared";
 
-export default function Home({ items, onToggleSave, setPage }) {
-  const [modal, setModal] = useState(null);
-  const recent = items.slice(0, 3);
+const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+export default function Home({ setPage }) {
+  const [recent,  setRecent]  = useState([]);
+  const [stats,   setStats]   = useState({ lost: 0, found: 0, resolved: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/items?limit=5").then(r => r.json()).catch(() => ({})),
+      fetch("/api/items/stats").then(r => r.json()).catch(() => ({})),
+    ]).then(([itemsRes, statsRes]) => {
+      // Backend returns { success, data: [...] } for items
+      let arr = [];
+      if (Array.isArray(itemsRes?.data))  arr = itemsRes.data;
+      else if (Array.isArray(itemsRes))   arr = itemsRes;
+      setRecent(arr);
+      // Backend returns { success, data: { total, lost, found, reunited } } for stats
+      const s = statsRes?.data || {};
+      setStats({ lost: s.lost || 0, found: s.found || 0, resolved: s.reunited || 0 });
+      setLoading(false);
+    });
+  }, []);
+
+  const STATS = [
+    { label: "Lost Items",   value: stats.lost,     color: T.red,   bg: T.redBg   },
+    { label: "Found Items",  value: stats.found,    color: T.green, bg: T.greenBg },
+    { label: "Reunited",     value: stats.resolved, color: "#A78BFA", bg: "rgba(124,58,237,0.1)" },
+  ];
 
   return (
-    <div>
-      {/* ── Hero ── */}
-      <section style={{
-        background: "linear-gradient(135deg,var(--c-text) 0%,#3D2810 60%,#1A1714 100%)",
-        padding: "90px 24px", textAlign: "center", position: "relative", overflow: "hidden",
-      }}>
-        {/* dot grid */}
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.04,
-          backgroundImage: "radial-gradient(circle,#D4531A 1px,transparent 1px)",
-          backgroundSize: "28px 28px",
-        }} />
-        {/* glow */}
-        <div style={{
-          position: "absolute", top: "-40%", left: "50%", transform: "translateX(-50%)",
-          width: 600, height: 600,
-          background: "radial-gradient(circle,rgba(212,83,26,0.15),transparent 70%)",
-          pointerEvents: "none",
-        }} />
+    <div style={{ minHeight: "100vh", background: T.bg, color: T.text, paddingBottom: 90 }}>
 
-        <div className="fade-up" style={{ position: "relative", maxWidth: 700, margin: "0 auto" }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "rgba(212,83,26,0.15)", border: "1px solid rgba(212,83,26,0.3)",
-            borderRadius: 999, padding: "6px 16px", marginBottom: 28,
+      {/* Hero */}
+      <section style={{
+        padding: "56px 20px 48px",
+        textAlign: "center",
+        position: "relative", overflow: "hidden",
+        maxWidth: 680, margin: "0 auto",
+      }}>
+        {/* Bg glow */}
+        <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 500, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+        <div style={{ position: "relative" }}>
+          <span style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "5px 12px", borderRadius: 999,
+            background: "rgba(124,58,237,0.12)", border: "1px solid rgba(124,58,237,0.25)",
+            fontSize: 12, fontWeight: 600, color: "#A78BFA",
+            marginBottom: 20, animation: "fadeUp 0.5s ease both",
           }}>
-            <span style={{ fontSize: 12, color: "#F0733A", fontWeight: 700, fontFamily: "var(--font-display)", letterSpacing: "0.08em" }}>
-              🎓 CAMPUS LOST &amp; FOUND
-            </span>
-          </div>
+            <span style={{ fontSize: 8 }}>●</span> AI-Powered Campus Lost & Found
+          </span>
 
           <h1 style={{
-            fontFamily: "var(--font-display)", fontWeight: 800,
-            fontSize: "clamp(34px,6vw,62px)", color: "#F6F4EF",
-            lineHeight: 1.08, marginBottom: 22, letterSpacing: "-1.5px",
+            fontSize: "clamp(32px, 8vw, 52px)", fontWeight: 900,
+            lineHeight: 1.1, letterSpacing: "-2px",
+            marginBottom: 16, animation: "fadeUp 0.5s ease 0.05s both",
           }}>
-            Lost something?<br />
-            <span style={{ color: "var(--c-accent2)" }}>We'll help you find it.</span>
+            Find what was{" "}
+            <span style={{
+              background: T.gradText, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            }}>lost</span>
+            <br />Return what was found
           </h1>
 
           <p style={{
-            fontSize: 17, color: "rgba(246,244,239,0.7)", lineHeight: 1.65,
-            marginBottom: 44, maxWidth: 500, margin: "0 auto 44px",
+            color: T.text2, fontSize: 16, lineHeight: 1.6,
+            maxWidth: 440, margin: "0 auto 32px",
+            animation: "fadeUp 0.5s ease 0.1s both",
           }}>
-            The smarter way to reunite lost items with their owners across campus.
-            Report, browse, and match — powered by real AI.
+            CampusFind uses AI to instantly match lost items with found reports across your entire campus.
           </p>
 
-          <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
-            <Button variant="accent" size="lg" onClick={() => setPage("browse")}>Browse Items</Button>
-            <Button variant="ghost" size="lg" onClick={() => setPage("report")}
-              style={{ color: "#F6F4EF", borderColor: "rgba(246,244,239,0.25)" }}>
-              Report Item
-            </Button>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", animation: "fadeUp 0.5s ease 0.15s both" }}>
+            <button onClick={() => setPage("report")} style={{
+              padding: "13px 28px", borderRadius: T.rMd, border: "none",
+              background: T.grad, color: "#fff",
+              fontFamily: T.font, fontWeight: 700, fontSize: 15, cursor: "pointer",
+              boxShadow: "0 8px 24px rgba(124,58,237,0.4)",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+              onMouseLeave={e => e.currentTarget.style.transform = "none"}
+            >
+              Report an Item
+            </button>
+            <button onClick={() => setPage("browse")} style={{
+              padding: "13px 28px", borderRadius: T.rMd,
+              background: T.surface, border: `1px solid ${T.border}`,
+              color: T.text, fontFamily: T.font, fontWeight: 600, fontSize: 15, cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = T.surfaceMd; e.currentTarget.style.borderColor = T.borderHov; }}
+              onMouseLeave={e => { e.currentTarget.style.background = T.surface; e.currentTarget.style.borderColor = T.border; }}
+            >
+              Browse Items
+            </button>
           </div>
         </div>
       </section>
 
-      {/* ── Stats ── */}
-      <section style={{ maxWidth: 1140, margin: "0 auto", padding: "40px 24px 0" }}>
-        <div className="stagger" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 16 }}>
-          {STATS.map((s, i) => (
-            <Card key={s.label} style={{ padding: "20px 22px", animation: "fadeUp 0.4s ease both", animationDelay: `${i * 60}ms` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{
-                  width: 46, height: 46, borderRadius: "var(--radius-md)",
-                  background: s.color + "15",
-                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
-                }}>{s.icon}</div>
-                <div>
-                  <p style={{ fontSize: 26, fontWeight: 800, fontFamily: "var(--font-display)", color: s.color, letterSpacing: "-0.5px" }}>{s.value}</p>
-                  <p style={{ fontSize: 12, color: "var(--c-text2)" }}>{s.label}</p>
-                </div>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "0 20px" }}>
+
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 32, animation: "fadeUp 0.5s ease 0.2s both" }}>
+          {STATS.map(s => (
+            <div key={s.label} style={{
+              background: T.surface, border: `1px solid ${T.border}`,
+              borderRadius: T.rMd, padding: "16px 12px", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 26, fontWeight: 900, color: s.color, letterSpacing: "-1px" }}>
+                {loading ? "—" : s.value}
               </div>
-            </Card>
+              <div style={{ fontSize: 11, color: T.text3, fontWeight: 600, marginTop: 2, letterSpacing: "0.04em" }}>
+                {s.label.toUpperCase()}
+              </div>
+            </div>
           ))}
         </div>
-      </section>
 
-      {/* ── How it works ── */}
-      <section style={{ maxWidth: 1140, margin: "0 auto", padding: "60px 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: 44 }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 32, letterSpacing: "-0.5px" }}>How It Works</h2>
-          <p style={{ fontSize: 15, color: "var(--c-text2)", marginTop: 8 }}>Three simple steps to recover your belongings</p>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 20 }}>
-          {[
-            { step: "01", icon: "📝", title: "Report", desc: "Submit details about your lost or found item with photos and precise location." },
-            { step: "02", icon: "🤖", title: "AI Match", desc: "Describe your item or upload a photo — Claude AI scans all listings to find best matches." },
-            { step: "03", icon: "🤝", title: "Connect", desc: "Get in touch directly with the finder or owner and safely reclaim your item." },
-          ].map((s, i) => (
-            <Card key={s.step} style={{ padding: "28px 24px", textAlign: "center", position: "relative", animation: "fadeUp 0.4s ease both", animationDelay: `${i * 80}ms` }}>
-              <div style={{ position: "absolute", top: 16, right: 16, fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 36, color: "var(--c-border)", letterSpacing: "-1px" }}>{s.step}</div>
-              <div style={{ fontSize: 40, marginBottom: 14 }}>{s.icon}</div>
-              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>{s.title}</h3>
-              <p style={{ fontSize: 13, color: "var(--c-text2)", lineHeight: 1.65 }}>{s.desc}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Recent listings ── */}
-      <section style={{ maxWidth: 1140, margin: "0 auto", padding: "0 24px 72px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28, flexWrap: "wrap", gap: 12 }}>
-          <div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 28, letterSpacing: "-0.5px" }}>Recent Listings</h2>
-            <p style={{ fontSize: 14, color: "var(--c-text2)", marginTop: 4 }}>Latest reported items on campus</p>
+        {/* AI Banner */}
+        <div onClick={() => setPage("ai")} style={{
+          background: "linear-gradient(135deg, rgba(124,58,237,0.15), rgba(37,99,235,0.1))",
+          border: "1px solid rgba(124,58,237,0.25)",
+          borderRadius: T.rLg, padding: "20px",
+          display: "flex", alignItems: "center", gap: 16,
+          cursor: "pointer", marginBottom: 32,
+          transition: "all 0.2s",
+          animation: "fadeUp 0.5s ease 0.25s both",
+        }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = "rgba(124,58,237,0.5)"}
+          onMouseLeave={e => e.currentTarget.style.borderColor = "rgba(124,58,237,0.25)"}
+        >
+          <div style={{
+            width: 48, height: 48, borderRadius: T.rMd, flexShrink: 0,
+            background: T.grad, display: "flex", alignItems: "center",
+            justifyContent: "center", fontSize: 22,
+            boxShadow: "0 4px 16px rgba(124,58,237,0.4)",
+          }}>✨</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 2 }}>AI Instant Match</div>
+            <div style={{ fontSize: 13, color: T.text2 }}>Describe your item — our AI finds matches in seconds</div>
           </div>
-          <Button variant="secondary" size="sm" onClick={() => setPage("browse")}>View All →</Button>
+          <span style={{ color: T.text3, fontSize: 20 }}>›</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 20 }}>
-          {recent.map(item => (
-            <ItemCard key={item.id} item={item} onViewDetails={setModal} onToggleSave={onToggleSave} />
-          ))}
-        </div>
-      </section>
 
-      <ItemModal item={modal} onClose={() => setModal(null)} onToggleSave={onToggleSave} />
+        {/* Recent Activity */}
+        <section style={{ animation: "fadeUp 0.5s ease 0.3s both" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.5px" }}>Recent Activity</h2>
+            <button onClick={() => setPage("browse")} style={{
+              background: "none", border: "none", color: "#A78BFA",
+              fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font,
+            }}>View all →</button>
+          </div>
+
+          {loading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {[1,2,3,4].map(i => <Skeleton key={i} height={80} />)}
+            </div>
+          ) : recent.length === 0 ? (
+            <div style={{
+              textAlign: "center", padding: "48px 20px",
+              background: T.surface, border: `1px solid ${T.border}`,
+              borderRadius: T.rLg,
+            }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
+              <p style={{ fontWeight: 600, marginBottom: 4 }}>No items yet</p>
+              <p style={{ color: T.text2, fontSize: 13 }}>Be the first to report a lost or found item</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {recent.map(item => {
+                const emoji = EMOJI[item.category] || "📦";
+                return (
+                  <Card key={item._id} hover onClick={() => setPage("browse")} padding="16px">
+                    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{
+                        width: 48, height: 48, borderRadius: T.rMd, flexShrink: 0,
+                        background: item.type === "lost" ? T.redBg : T.greenBg,
+                        border: `1px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
+                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+                      }}>{emoji}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                          <Badge type={item.type} />
+                          <span style={{ fontSize: 11, color: T.text3 }}>{timeAgo(item.createdAt || item.date)}</span>
+                        </div>
+                        <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</p>
+                        <p style={{ fontSize: 12, color: T.text2 }}>📍 {item.building || item.location || "Campus"}</p>
+                      </div>
+                      <span style={{ color: T.text3, fontSize: 18, flexShrink: 0 }}>›</span>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
+
+      <BottomNav active="home" setPage={setPage} />
     </div>
   );
 }
