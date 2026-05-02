@@ -4,12 +4,12 @@ import T from "../utils/tokens";
 import { Card, Badge, Skeleton, BottomNav } from "../components/shared";
 import api from "../utils/api";
 
-const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
+const EMOJI = { "Bags & Wallets": "🎒", Electronics: "📱", Keys: "🔑", "ID & Cards": "🪪", Clothing: "👕", "Books & Notes": "📚", Accessories: "💍", Other: "📦" };
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return "just now";
+  if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
@@ -17,8 +17,8 @@ function timeAgo(dateStr) {
 }
 
 export default function Home({ setPage }) {
-  const [recent,  setRecent]  = useState([]);
-  const [stats,   setStats]   = useState({ lost: 0, found: 0, resolved: 0 });
+  const [recent, setRecent] = useState([]);
+  const [stats, setStats] = useState({ lost: 0, found: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,8 +29,8 @@ export default function Home({ setPage }) {
       // Backend returns { success, data: [...] }
       const itemsData = itemsRes.data;
       let arr = [];
-      if (Array.isArray(itemsData?.data))  arr = itemsData.data;
-      else if (Array.isArray(itemsData))   arr = itemsData;
+      if (Array.isArray(itemsData?.data)) arr = itemsData.data;
+      else if (Array.isArray(itemsData)) arr = itemsData;
       setRecent(arr);
       // Backend returns { success, data: { total, lost, found, reunited } }
       const s = statsRes.data?.data || {};
@@ -40,9 +40,9 @@ export default function Home({ setPage }) {
   }, []);
 
   const STATS = [
-    { label: "Lost Items",   value: stats.lost,     color: T.red,   bg: T.redBg   },
-    { label: "Found Items",  value: stats.found,    color: T.green, bg: T.greenBg },
-    { label: "Reunited",     value: stats.resolved, color: "#A78BFA", bg: "rgba(124,58,237,0.1)" },
+    { label: "Lost Items", value: stats.lost, color: T.red, bg: T.redBg },
+    { label: "Found Items", value: stats.found, color: T.green, bg: T.greenBg },
+    { label: "Reunited", value: stats.resolved, color: "#A78BFA", bg: "rgba(124,58,237,0.1)" },
   ];
 
   return (
@@ -174,7 +174,7 @@ export default function Home({ setPage }) {
 
           {loading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[1,2,3,4].map(i => <Skeleton key={i} height={80} />)}
+              {[1, 2, 3, 4].map(i => <Skeleton key={i} height={80} />)}
             </div>
           ) : recent.length === 0 ? (
             <div style={{

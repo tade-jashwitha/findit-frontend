@@ -1,16 +1,16 @@
 // src/App.jsx — CampusFind app shell
 import { useState, useCallback, useEffect } from "react";
-import { Navbar }       from "./components/Navbar";
-import ToastContainer   from "./components/ToastContainer";
-import SplashScreen     from "./components/SplashScreen";
-import Home             from "./pages/Home";
-import Browse           from "./pages/Browse";
-import Report           from "./pages/Report";
-import AIMatch          from "./pages/AIMatch";
-import Login            from "./pages/Login";
-import Register         from "./pages/Register";
-import Dashboard        from "./pages/Dashboard";
-import T                from "./utils/tokens";
+import { Navbar } from "./components/Navbar";
+import ToastContainer from "./components/ToastContainer";
+import SplashScreen from "./components/SplashScreen";
+import Home from "./pages/Home";
+import Browse from "./pages/Browse";
+import Report from "./pages/Report";
+import AIMatch from "./pages/AIMatch";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import T from "./utils/tokens";
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -18,7 +18,7 @@ export default function App() {
     catch { return null; }
   });
 
-  const [page,    setPage]    = useState("splash");
+  const [page, setPage] = useState("splash");
   const [savedIds, setSavedIds] = useState([]);
 
   const handleSplashFinish = useCallback(() => {
@@ -64,12 +64,12 @@ export default function App() {
       <Navbar page={page} setPage={navigate} user={user} setUser={handleSetUser} />
 
       <main>
-        {page === "home"      && <Home      setPage={navigate} onToggleSave={toggleSave} />}
-        {page === "browse"    && <Browse    setPage={navigate} user={user} onToggleSave={toggleSave} />}
-        {page === "report"    && user && <Report user={user} setPage={navigate} />}
-        {page === "report"    && !user && navigate("login")}
-        {page === "ai"        && <AIMatch   setPage={navigate} />}
-        {page === "dashboard" && user  && <Dashboard user={user} setPage={navigate} />}
+        {page === "home" && <Home setPage={navigate} onToggleSave={toggleSave} />}
+        {page === "browse" && <Browse setPage={navigate} user={user} onToggleSave={toggleSave} />}
+        {page === "report" && user && <Report user={user} setPage={navigate} />}
+        {page === "report" && !user && navigate("login")}
+        {page === "ai" && <AIMatch setPage={navigate} />}
+        {page === "dashboard" && user && <Dashboard user={user} setPage={navigate} />}
         {page === "dashboard" && !user && navigate("login")}
       </main>
 
