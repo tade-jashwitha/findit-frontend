@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import T from "../utils/tokens";
 import { Card, Badge, Skeleton, BottomNav } from "../components/shared";
+import api from "../utils/api";
 
 const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
 const CATS  = ["All", "Bags & Wallets", "Electronics", "Keys", "ID & Cards", "Clothing", "Books & Notes", "Accessories", "Other"];
@@ -112,14 +113,12 @@ export default function Browse({ setPage, user }) {
   const [focused, setFocused] = useState(false);
 
   useEffect(() => {
-    fetch("/api/items")
-      .then(r => r.json())
-      .then(d => {
-        // Normalise whatever shape the API returns into a plain array
+    api.get("/items")
+      .then(r => {
+        const d = r.data;
         let arr = [];
-        if (Array.isArray(d))            arr = d;
-        else if (Array.isArray(d?.items)) arr = d.items;
-        else if (Array.isArray(d?.data))  arr = d.data;
+        if (Array.isArray(d?.data))  arr = d.data;
+        else if (Array.isArray(d))   arr = d;
         setItems(arr);
         setLoading(false);
       })

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import T from "../utils/tokens";
 import { Card, Badge, Skeleton, BottomNav } from "../components/shared";
+import api from "../utils/api";
 
 const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
 
@@ -22,16 +23,17 @@ export default function Home({ setPage }) {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/items?limit=5").then(r => r.json()).catch(() => ({})),
-      fetch("/api/items/stats").then(r => r.json()).catch(() => ({})),
+      api.get("/items?limit=5").catch(() => ({ data: {} })),
+      api.get("/items/stats").catch(() => ({ data: {} })),
     ]).then(([itemsRes, statsRes]) => {
-      // Backend returns { success, data: [...] } for items
+      // Backend returns { success, data: [...] }
+      const itemsData = itemsRes.data;
       let arr = [];
-      if (Array.isArray(itemsRes?.data))  arr = itemsRes.data;
-      else if (Array.isArray(itemsRes))   arr = itemsRes;
+      if (Array.isArray(itemsData?.data))  arr = itemsData.data;
+      else if (Array.isArray(itemsData))   arr = itemsData;
       setRecent(arr);
-      // Backend returns { success, data: { total, lost, found, reunited } } for stats
-      const s = statsRes?.data || {};
+      // Backend returns { success, data: { total, lost, found, reunited } }
+      const s = statsRes.data?.data || {};
       setStats({ lost: s.lost || 0, found: s.found || 0, resolved: s.reunited || 0 });
       setLoading(false);
     });

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import T from "../utils/tokens";
 import { Card, Badge, Skeleton, Button, BottomNav } from "../components/shared";
+import api from "../utils/api";
 
 const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
 
@@ -22,10 +23,12 @@ export default function Dashboard({ user, setPage }) {
   const [tab,     setTab]     = useState("all");
 
   useEffect(() => {
-    const token = localStorage.getItem("findit_token");
-    fetch("/api/items/my", { headers: token ? { Authorization: `Bearer ${token}` } : {} })
-      .then(r => r.json())
-      .then(d => { setItems(Array.isArray(d) ? d : d.items || []); setLoading(false); })
+    api.get("/items/my")
+      .then(r => {
+        const d = r.data;
+        setItems(Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : []);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, []);
 

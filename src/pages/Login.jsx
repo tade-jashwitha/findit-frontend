@@ -4,6 +4,7 @@ import { useGoogleLogin } from "@react-oauth/google";
 import T from "../utils/tokens";
 import AILogo from "../components/AILogo";
 import { Input, Button, Divider } from "../components/shared";
+import api from "../utils/api";
 
 export default function Login({ setPage, setUser }) {
   const [email,    setEmail]    = useState("");
@@ -18,12 +19,11 @@ export default function Login({ setPage, setUser }) {
       try {
         const info = await fetch("https://www.googleapis.com/oauth2/v3/userinfo",
           { headers: { Authorization: `Bearer ${tok.access_token}` } }).then(r => r.json());
-        const res  = await fetch("/api/auth/google", {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(info),
-        }).then(r => r.json());
-        if (res.success) { localStorage.setItem("findit_token", res.token); setUser(res.user); }
-        else setError(res.message || "Google login failed");
+        const res = await api.post("/auth/google", info);
+        if (res.data.success) {
+          localStorage.setItem("findit_token", res.data.token);
+          setUser(res.data.user);
+        } else setError(res.data.message || "Google login failed");
       } catch { setError("Connection error. Try again."); }
       finally   { setGLoading(false); }
     },
@@ -34,13 +34,12 @@ export default function Login({ setPage, setUser }) {
     e.preventDefault();
     setLoading(true); setError("");
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      }).then(r => r.json());
-      if (res.success) { localStorage.setItem("findit_token", res.token); setUser(res.user); }
-      else setError(res.message || "Invalid credentials");
-    } catch { setError("Server error. Try again."); }
+      const res = await api.post("/auth/login", { email, password });
+      if (res.data.success) {
+        localStorage.setItem("findit_token", res.data.token);
+        setUser(res.data.user);
+      } else setError(res.data.message || "Invalid credentials");
+    } catch (err) { setError(err.response?.data?.message || "Server error. Try again."); }
     finally  { setLoading(false); }
   };
 
