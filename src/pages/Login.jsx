@@ -19,12 +19,14 @@ export default function Login({ setPage, setUser }) {
       try {
         const info = await fetch("https://www.googleapis.com/oauth2/v3/userinfo",
           { headers: { Authorization: `Bearer ${tok.access_token}` } }).then(r => r.json());
+        // Backend /auth/google returns { success, data: userObj } — no token for Google
         const res = await api.post("/auth/google", info);
         if (res.data.success) {
-          localStorage.setItem("findit_token", res.data.token);
-          setUser(res.data.user);
+          const user = res.data.data;
+          localStorage.setItem("findit_user", JSON.stringify(user));
+          setUser(user);
         } else setError(res.data.message || "Google login failed");
-      } catch { setError("Connection error. Try again."); }
+      } catch (err) { setError(err.response?.data?.message || "Connection error. Try again."); }
       finally   { setGLoading(false); }
     },
     onError: () => setError("Google login cancelled."),
@@ -34,12 +36,15 @@ export default function Login({ setPage, setUser }) {
     e.preventDefault();
     setLoading(true); setError("");
     try {
+      // Backend /auth/login returns { success, token, data: user }
       const res = await api.post("/auth/login", { email, password });
       if (res.data.success) {
         localStorage.setItem("findit_token", res.data.token);
-        setUser(res.data.user);
+        const user = res.data.data; // user object is inside .data
+        localStorage.setItem("findit_user", JSON.stringify(user));
+        setUser(user);
       } else setError(res.data.message || "Invalid credentials");
-    } catch (err) { setError(err.response?.data?.message || "Server error. Try again."); }
+    } catch (err) { setError(err.response?.data?.message || "Invalid email or password"); }
     finally  { setLoading(false); }
   };
 

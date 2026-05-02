@@ -33,8 +33,10 @@ export default function Register({ setPage, setUser }) {
       if (form.studentId) payload.studentId = form.studentId;
       if (form.phone)     payload.phone     = form.phone;
 
+      // Backend returns { success, token, data: user }
       const res = await authAPI.register(payload);
-      const { token, data: user } = res.data;
+      const token = res.data.token;
+      const user  = res.data.data;
       authHelpers.setToken(token);
       authHelpers.setUser(user);
       setUser(user);
