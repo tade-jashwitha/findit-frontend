@@ -3,6 +3,16 @@
   publish = "build"
 
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from   = "/*"
+  to     = "/index.html"
   status = 200
+
+# Fix: Cross-Origin-Opener-Policy for Google OAuth popup
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Cross-Origin-Opener-Policy   = "same-origin-allow-popups"
+    Cross-Origin-Embedder-Policy = "unsafe-none"
+    X-Frame-Options              = "DENY"
+    X-Content-Type-Options       = "nosniff"
+    Referrer-Policy              = "strict-origin-when-cross-origin"
