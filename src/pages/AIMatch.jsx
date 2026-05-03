@@ -1,49 +1,68 @@
 // src/pages/AIMatch.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import T from "../utils/tokens";
 import { Card, Input, Button, Badge, Skeleton, BottomNav } from "../components/shared";
 import { aiAPI } from "../utils/api";
+import api from "../utils/api";
 
 const CAT_EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦", Jewelry:"💎", Bags:"🎒" };
 
-const DEMO_ITEMS = [
-  { id:1, title:"Blue Fastrack Watch",  type:"found", category:"Accessories", location:"Sports complex", description:"Blue dial round face brown leather strap found near basketball court entrance", date:"May 2" },
-  { id:2, title:"Black Nike Backpack",  type:"lost",  category:"Bags & Wallets", location:"Main Canteen", description:"Black backpack with red Nike logo laptop compartment charger and books inside",  date:"May 1" },
-  { id:3, title:"Sony WH-1000XM5",      type:"lost",  category:"Electronics", location:"Library 2F",   description:"Black Sony headphones left earbud has a scratch stored in original case",          date:"Apr 30" },
-  { id:4, title:"Student ID — Riya S.", type:"found", category:"ID & Cards",   location:"Admin Block",  description:"Student ID card for Riya Sharma CSE 3rd year photo ID",                          date:"May 2" },
-  { id:5, title:"Honda Key Chain",      type:"found", category:"Keys",         location:"Parking Lot B",description:"Honda bike keys with red keychain small flashlight attached",                     date:"May 2" },
-];
-
 const scoreColor = s => s >= 80 ? T.green : s >= 60 ? T.cyan : s >= 40 ? T.amber : T.text3;
 
-export default function AIMatch({ setPage, items = [] }) {
-  const [query,   setQuery]   = useState("");
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState(null);
-  const [error,   setError]   = useState(null);
+// Helper: safely get a location string from string or object
+function getLocation(loc, building) {
+  if (building) return building;
+  if (!loc) return "Campus";
+  if (typeof loc === "object") return loc.building || loc.specificArea || "Campus";
+  return loc;
+}
 
-  const allItems = items.length ? items : DEMO_ITEMS;
+export default function AIMatch({ setPage }) {
+  const [query,        setQuery]        = useState("");
+  const [loading,      setLoading]      = useState(false);
+  const [results,      setResults]      = useState(null);
+  const [error,        setError]        = useState(null);
+  const [items,        setItems]        = useState([]);
+  const [itemsLoading, setItemsLoading] = useState(true);
+
+  // ── Fetch real items from the database on mount ──────────────────────
+  useEffect(() => {
+    api.get("/items")
+      .then(r => {
+        const d = r.data;
+        const arr = Array.isArray(d?.data) ? d.data : Array.isArray(d) ? d : [];
+        setItems(arr);
+      })
+      .catch(() => setItems([]))
+      .finally(() => setItemsLoading(false));
+  }, []);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
     setLoading(true); setResults(null); setError(null);
     try {
+      // Step 1: Ask backend (Gemini) to generate tags from the query
       const res  = await aiAPI.generateTags({ title: query, description: query, category: "Other" });
       const tags = res.data?.tags || [];
       const lq   = query.toLowerCase();
 
-      const scored = allItems
+      // Step 2: Score every real item against the tags + keywords
+      const scored = items
         .map(item => {
-          const text  = `${item.title} ${item.description} ${item.category}`.toLowerCase();
+          const loc  = getLocation(item.location, item.building);
+          const text = `${item.title} ${item.description || ""} ${item.category} ${loc}`.toLowerCase();
           const tagM  = tags.filter(t => text.includes(t.toLowerCase())).length;
           const wordM = lq.split(/\s+/).filter(w => w.length > 2 && text.includes(w)).length;
-          const score = Math.min(Math.round(((tagM * 20) + (wordM * 25)) / Math.max(tags.length, 1) * 8), 99);
+          const score = Math.min(
+            Math.round(((tagM * 20) + (wordM * 25)) / Math.max(tags.length, 1) * 8),
+            99
+          );
           const reason = tagM > 0
             ? `${tagM} AI tag${tagM > 1 ? "s" : ""} matched from your description`
             : wordM > 0
             ? `${wordM} keyword${wordM > 1 ? "s" : ""} overlap with your query`
             : "Low similarity";
-          return { ...item, score, reason };
+          return { ...item, score, reason, _locationStr: loc };
         })
         .filter(i => i.score >= 20)
         .sort((a, b) => b.score - a.score)
@@ -102,7 +121,7 @@ export default function AIMatch({ setPage, items = [] }) {
               <p style={{ fontSize: 11, fontWeight: 700, color: T.text3, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 16 }}>How it works</p>
               {[
                 ["✍️", "Describe your item",  "Include color, brand, features, where you last had it"],
-                ["🤖", "AI scans listings",   `Checks all ${allItems.length} campus reports intelligently`],
+                ["🤖", "AI scans listings",   itemsLoading ? "Loading campus reports…" : `Checks all ${items.length} campus reports intelligently`],
                 ["📊", "Get ranked results",  "Matches sorted by similarity score with AI reasoning"],
               ].map(([icon, title, desc]) => (
                 <div key={title} style={{ display: "flex", gap: 14, marginBottom: 16, alignItems: "flex-start" }}>
@@ -116,6 +135,20 @@ export default function AIMatch({ setPage, items = [] }) {
                   </div>
                 </div>
               ))}
+
+              {/* Live item count badge */}
+              {!itemsLoading && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  padding: "8px 12px", borderRadius: T.r,
+                  background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)",
+                }}>
+                  <span style={{ fontSize: 14 }}>🗂️</span>
+                  <span style={{ fontSize: 12, color: "#A78BFA", fontWeight: 600 }}>
+                    {items.length} real listings loaded from database
+                  </span>
+                </div>
+              )}
             </Card>
           )}
 
@@ -123,7 +156,7 @@ export default function AIMatch({ setPage, items = [] }) {
           {loading && (
             <Card padding="40px" style={{ textAlign: "center", animation: "fadeUp 0.3s ease both" }}>
               <div style={{ width: 56, height: 56, border: `3px solid ${T.border}`, borderTop: `3px solid #7C3AED`, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 20px" }} />
-              <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Scanning {allItems.length} listings…</p>
+              <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Scanning {items.length} listings…</p>
               <p style={{ fontSize: 12, color: T.text2 }}>Analyzing descriptions, categories, and locations</p>
             </Card>
           )}
@@ -148,7 +181,7 @@ export default function AIMatch({ setPage, items = [] }) {
                 <div>
                   <h2 style={{ fontSize: 18, fontWeight: 700 }}>Match Results</h2>
                   <p style={{ fontSize: 12, color: T.text2, marginTop: 2 }}>
-                    {results.length} item{results.length !== 1 ? "s" : ""} matched
+                    {results.length} item{results.length !== 1 ? "s" : ""} matched from {items.length} listings
                   </p>
                 </div>
                 <span style={{
@@ -167,13 +200,14 @@ export default function AIMatch({ setPage, items = [] }) {
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {results.map((item, idx) => (
-                    <Card key={item.id} style={{ overflow: "hidden", animation: `fadeUp 0.3s ease ${idx * 60}ms both` }} padding="0">
+                    <Card key={item._id || item.id} style={{ overflow: "hidden", animation: `fadeUp 0.3s ease ${idx * 60}ms both` }} padding="0">
                       <div style={{ padding: "16px", display: "flex", gap: 14, alignItems: "flex-start" }}>
                         <div style={{ flexShrink: 0 }}>
                           <div style={{
                             width: 48, height: 48, borderRadius: 12,
-                            background: T.surfaceMd, display: "flex",
-                            alignItems: "center", justifyContent: "center", fontSize: 24,
+                            background: item.type === "lost" ? T.redBg : T.greenBg,
+                            border: `1px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
+                            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
                           }}>
                             {CAT_EMOJI[item.category] || "📦"}
                           </div>
@@ -197,7 +231,7 @@ export default function AIMatch({ setPage, items = [] }) {
                           </div>
 
                           <p style={{ fontSize: 12, color: T.text2, lineHeight: 1.55, marginBottom: 8 }}>
-                            {item.description?.slice(0, 110)}…
+                            {(item.description || "").slice(0, 110)}{item.description?.length > 110 ? "…" : ""}
                           </p>
 
                           {item.reason && (
@@ -212,13 +246,15 @@ export default function AIMatch({ setPage, items = [] }) {
 
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                             <Badge type={item.type} />
-                            <span style={{ fontSize: 11, color: T.text3 }}>📍 {typeof item.location === "object" && item.location !== null ? item.location.building || item.location.specificArea || "Campus" : item.location || item.building || "Campus"}</span>
-                            <span style={{ fontSize: 11, color: T.text3 }}>📅 {item.date}</span>
+                            <span style={{ fontSize: 11, color: T.text3 }}>📍 {item._locationStr}</span>
+                            <span style={{ fontSize: 11, color: T.text3 }}>
+                              📅 {item.date ? new Date(item.date).toLocaleDateString() : item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "—"}
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Score progress bar */}
+                      {/* Score bar */}
                       <div style={{ height: 3, background: T.border }}>
                         <div style={{ height: "100%", width: `${item.score}%`, background: scoreColor(item.score), transition: "width 0.9s ease" }} />
                       </div>
