@@ -168,7 +168,13 @@ export default function Dashboard({ user, setPage }) {
                           <span style={{ fontSize: 11, color: T.text3 }}>{timeAgo(item.createdAt || item.date)}</span>
                         </div>
                         <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</p>
-                        <p style={{ fontSize: 12, color: T.text2 }}>📍 {item.building || item.location || "Campus"}</p>
+                        <p style={{ fontSize: 12, color: T.text2 }}>📍 {
+                          item.building
+                          || (typeof item.location === "object" && item.location !== null
+                              ? item.location.building || item.location.specificArea || "Campus"
+                              : item.location)
+                          || "Campus"
+                        }</p>
                       </div>
                     </div>
                   </Card>
