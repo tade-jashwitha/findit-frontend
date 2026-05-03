@@ -1,92 +1,137 @@
-# 🎓 CampusFind — Frontend
+# 🎒 CampusFind — Campus Lost & Found Platform
 
-> **AI-powered Lost & Found platform for college campuses**  
-> Built with React · Deployed on Netlify · Connected to Render backend
+<div align="center">
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/campusfoundandlost/deploy-status)](https://campusfoundandlost.netlify.app)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
-![License](https://img.shields.io/badge/license-MIT-green)
+![CampusFind](https://img.shields.io/badge/CampusFind-Lost%20%26%20Found-7C3AED?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik05LjUgMkE2LjUgNi41IDAgMCAxIDE2IDguNWMwIDEuNjEtLjU5IDMuMDktMS41NiA0LjIzTDIwIDIwbC0xLjQxIDEuNDFMMTIuNzMgMTVBNi41IDYuNSAwIDEgMSA5LjUgMm0wIDJBNC41IDQuNSAwIDAgMCA1IDguNSA0LjUgNC41IDAgMCAwIDkuNSAxMyA0LjUgNC41IDAgMCAwIDE0IDguNSA0LjUgNC41IDAgMCAwIDkuNSA0eiIvPjwvc3ZnPg==)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)](https://reactjs.org/)
+[![Capacitor](https://img.shields.io/badge/Capacitor-8-119EFF?style=flat-square&logo=capacitor)](https://capacitorjs.com/)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-00C7B7?style=flat-square&logo=github)](https://tade-jashwitha.github.io/findit-frontend)
 
----
+**A smart campus lost & found system with AI-powered matching, native Android support, and 2-step claim verification.**
 
-## 🌐 Live Demo
+[🌐 Live Website](https://tade-jashwitha.github.io/findit-frontend) · [📱 Download APK](#-android-apk) · [🔧 Backend Repo](https://github.com/tade-jashwitha/findit-backend)
 
-| Platform | URL |
-|----------|-----|
-| 🌍 Web App | [campusfoundandlost.netlify.app](https://campusfoundandlost.netlify.app) |
-| 📱 Android APK | Available in `/android/app/build/outputs/apk/debug/` |
-| 🔧 Backend API | [findit-backend-0v6p.onrender.com/api](https://findit-backend-0v6p.onrender.com/api) |
+</div>
 
 ---
 
 ## ✨ Features
 
-### 🤖 AI Matching System
-- Automatically matches LOST and FOUND items on submission
-- 4-signal weighted scoring: **Title (30%) + Description (20%) + Category (20%) + Location (15%) + Date (10%) + AI Tags (5%)**
-- Returns match confidence score (0–100%)
-- Shows **"⚡ Possible Matches Found"** with reasons on the Report success screen
-
-### 📩 Claim / Verification System
-- Structured claim flow replacing direct email contact
-- Finder → sends claim with message → Owner reviews → Accept / Reject
-- Both parties notified at every step
-- Item status automatically updates to **"Claimed"** on approval
-
-### 🔔 In-App Notifications
-- Real-time notification bell in Navbar (polls every 30s)
-- Unread count badge on bell icon
-- Notifications for: match found · claim received · claim approved/rejected
-- Dropdown with full notification history
-
-### 🧠 Smart Sorting
-- Toggle between **🕐 By Recent** and **⚡ By Match Score**
-- Match score badges (color-coded) shown on each item card
-- AI match reasons displayed in item detail sheet
-
-### 🔐 Authentication
-- Email/password registration & login with JWT
-- Google OAuth 2.0 (one-click sign in)
-- Auto-redirect on 401, token stored in localStorage
-
-### 📱 Mobile APK
-- Built with Capacitor 8
-- Android debug APK included
-- Full native app experience
+| Feature | Description |
+|---|---|
+| 🔍 **Smart Browse** | Filter by type, category, date, and location with real-time search |
+| 🤖 **AI Matching** | Auto-matches lost & found items using keyword and similarity scoring |
+| 📸 **Image Upload** | Upload photos of items via Cloudinary |
+| 🔐 **Dual Auth** | Google OAuth (web & native Android) + Email/Password login |
+| 📋 **2-Step Claim Verification** | Finder confirms claim → Owner confirms receipt → Item marked "Reunited" |
+| 📱 **Android APK** | Full native Android app via Capacitor with native Google Sign-In |
+| 🔔 **Notifications** | Real-time in-app alerts for matches, claims, and reunions |
+| 🎨 **Dark UI** | Premium dark-mode design with animations and glassmorphism |
 
 ---
 
-## 🏗️ Architecture
+## 🖥️ Tech Stack
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    FRONTEND (React)                      │
-│                  Netlify CDN Deploy                      │
-│                                                         │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │
-│  │  Browse  │  │  Report  │  │ AIMatch  │  │  Auth  │ │
-│  │ + Claims │  │ + Matches│  │ (Gemini) │  │ Google │ │
-│  └──────────┘  └──────────┘  └──────────┘  └────────┘ │
-│                                                         │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │         Axios API Utility (src/utils/api.js)    │   │
-│  │  • JWT auto-attach  • 401 auto-redirect         │   │
-│  └─────────────────────────────────────────────────┘   │
-└─────────────────────────┬───────────────────────────────┘
-                          │ HTTPS REST API
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│                   BACKEND (Node/Express)                 │
-│                   Render.com Deploy                      │
-│                                                         │
-│  /api/auth        /api/items         /api/ai            │
-│  /api/notifications  /api/items/:id/claim               │
-│                                                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │  MongoDB     │  │  Cloudinary  │  │   Gemini AI  │  │
-│  │  Atlas       │  │  (Images)    │  │  (Tags/Match)│  │
-│  └──────────────┘  └──────────────┘  └──────────────┘  │
-└─────────────────────────────────────────────────────────┘
+Frontend:    React 18 + React Router + Axios
+Auth:        @react-oauth/google (web) + @codetrix-studio/capacitor-google-auth (native)
+Mobile:      Capacitor 8 (Android APK)
+Styling:     Vanilla CSS with custom design tokens
+Hosting:     GitHub Pages (web) + APK for Android
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm 9+
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/tade-jashwitha/findit-frontend.git
+cd findit-frontend
+
+# Install dependencies (legacy-peer-deps needed for Capacitor plugin)
+npm install --legacy-peer-deps
+
+# Start development server
+npm start
+```
+
+### Environment Variables
+
+Create a `.env` file in the root:
+
+```env
+REACT_APP_GOOGLE_CLIENT_ID=your_google_oauth_client_id
+REACT_APP_API_URL=https://findit-backend-0v6p.onrender.com/api
+```
+
+---
+
+## 📱 Android APK
+
+The app is packaged as a native Android APK using **Capacitor 8**.
+
+### Download
+The latest APK is available as a build artifact.
+
+### Build from Source
+
+```bash
+# 1. Build React app with relative paths (required for Capacitor)
+$env:PUBLIC_URL="." ; npm run build       # Windows
+PUBLIC_URL="." npm run build              # macOS/Linux
+
+# 2. Sync web assets into Android project
+npx cap sync android
+
+# 3. Build the APK
+cd android
+./gradlew assembleDebug
+
+# APK output: android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Google Sign-In in APK
+The APK uses the `@codetrix-studio/capacitor-google-auth` plugin for native Google Sign-In.
+Required: Register your app's SHA-1 fingerprint as an Android OAuth client in Google Cloud Console.
+
+```bash
+# Get your debug SHA-1 fingerprint
+keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android
+```
+
+---
+
+## 🌐 Deployment (GitHub Pages)
+
+```bash
+# Deploy to GitHub Pages
+npm run deploy
+```
+
+This runs `gh-pages -d build` and publishes the `build/` folder to the `gh-pages` branch.
+
+Live URL: **https://tade-jashwitha.github.io/findit-frontend**
+
+---
+
+## 🔄 2-Step Claim Verification Flow
+
+```
+Step 1 — Finder confirms:
+  Lost person → Browse → "Claim This Item" → Send message
+  Found person → Dashboard → "✅ Confirm Match" or "❌ Reject"
+
+Step 2 — Owner confirms receipt:
+  Lost person → Dashboard → "Action Required" → "🎉 Yes! I Got It Back!"
+
+Result → Item marked as "✅ Reunited" + both parties notified
 ```
 
 ---
@@ -95,145 +140,42 @@
 
 ```
 frontend/
-├── public/
-│   └── index.html              # Meta tags, favicon, PWA config
+├── public/               # Static assets, index.html
 ├── src/
-│   ├── components/
-│   │   ├── Navbar.jsx          # 🔔 Notification bell + nav links
-│   │   ├── AILogo.jsx          # Animated logo component
-│   │   └── shared/             # Button, Card, Input, Badge, Skeleton
-│   ├── pages/
-│   │   ├── Home.jsx            # Landing with stats
-│   │   ├── Browse.jsx          # ⚡ Match scores + Claim modal + Smart sort
-│   │   ├── Report.jsx          # Submit form + auto-match results
-│   │   ├── AIMatch.jsx         # Image-based AI search
-│   │   ├── Dashboard.jsx       # My items + claim requests
-│   │   ├── Login.jsx           # JWT + Google OAuth
-│   │   └── Register.jsx        # New user registration
+│   ├── components/       # Navbar, SplashScreen, shared UI, ToastContainer
+│   ├── pages/            # Home, Browse, Report, AIMatch, Login, Register, Dashboard
 │   ├── utils/
-│   │   └── api.js              # Axios instance + all API calls
-│   └── utils/
-│       └── tokens.js           # Design system tokens
-├── android/                    # Capacitor Android project
-├── capacitor.config.json       # App ID, webDir config
-├── netlify.toml                # Redirect rules for SPA
-└── .env                        # Environment variables
+│   │   ├── api.js        # Axios instance + API helpers
+│   │   └── tokens.js     # Design system tokens (colors, spacing, fonts)
+│   ├── App.jsx           # Root component with routing logic
+│   └── index.js          # Entry point with GoogleOAuthProvider
+├── android/              # Capacitor Android project
+├── capacitor.config.json # Capacitor + GoogleAuth plugin config
+├── netlify.toml          # CORS headers for Google OAuth popup
+└── .npmrc                # legacy-peer-deps for Capacitor plugin
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## 🎨 Design System
 
-Create a `.env` file in the frontend root:
+The app uses a centralized token system (`src/utils/tokens.js`):
 
-```env
-REACT_APP_GOOGLE_CLIENT_ID=your_google_oauth_client_id
-REACT_APP_API_URL=https://findit-backend-0v6p.onrender.com/api
-```
-
-> ⚠️ **Never commit `.env` to GitHub** — it's in `.gitignore`
-
----
-
-## 🚀 Local Development
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server (http://localhost:3000)
-npm start
-
-# Build for production
-npm run build
-```
+- **Background:** `#0A0A0F` (deep dark)
+- **Surface:** `#12121A`
+- **Accent:** `#7C3AED` (violet)
+- **Font:** `Inter, system-ui`
+- **Animations:** fadeUp, float, spin (CSS keyframes)
 
 ---
 
-## 📦 Building the Android APK
+## 🔗 Related
 
-### Prerequisites
-- Android Studio installed
-- Android SDK at `C:\Users\<you>\AppData\Local\Android\Sdk`
-
-```bash
-# 1. Build React production bundle
-npm run build
-
-# 2. Sync to Android
-npx cap sync android
-
-# 3. Build APK (uses Android Studio's JDK 21)
-$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-cd android
-.\gradlew.bat assembleDebug
-```
-
-APK output: `android/app/build/outputs/apk/debug/app-debug.apk`
+- **Backend API:** [findit-backend](https://github.com/tade-jashwitha/findit-backend)
+- **Live API:** `https://findit-backend-0v6p.onrender.com/api`
 
 ---
 
-## 🌍 Netlify Deployment
+## 📄 License
 
-### Environment Variables (set in Netlify Dashboard)
-```
-REACT_APP_GOOGLE_CLIENT_ID = <your_client_id>
-REACT_APP_API_URL           = https://findit-backend-0v6p.onrender.com/api
-```
-
-### `netlify.toml`
-```toml
-[[redirects]]
-  from = "/*"
-  to   = "/index.html"
-  status = 200
-```
-
-### Google OAuth for Production
-In [Google Cloud Console](https://console.cloud.google.com) → OAuth Client → add:
-- **Authorized JavaScript Origins:** `https://campusfoundandlost.netlify.app`
-- **Authorized Redirect URIs:** `https://campusfoundandlost.netlify.app`
-
----
-
-## 🔌 API Reference
-
-All requests go to `REACT_APP_API_URL` base URL.
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/auth/register` | Register with email/password |
-| `POST` | `/auth/login` | Login → returns JWT |
-| `POST` | `/auth/google` | Google OAuth → returns JWT |
-| `GET` | `/items` | Browse items (filter + sort) |
-| `POST` | `/items` | Submit new item → auto-match runs |
-| `GET` | `/items/:id` | Item detail with match data |
-| `POST` | `/items/:id/claim` | Send claim request |
-| `PATCH` | `/items/:id/claim/:claimId` | Approve/reject claim |
-| `GET` | `/notifications` | Get my notifications |
-| `PATCH` | `/notifications/read-all` | Mark all as read |
-| `POST` | `/ai/match` | Image-based AI item matching |
-| `POST` | `/ai/tags` | Generate AI tags for item |
-
----
-
-## 👩‍💻 Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| UI Framework | React 18 |
-| Styling | Vanilla CSS (inline design tokens) |
-| HTTP Client | Axios |
-| Auth | JWT + Google OAuth 2.0 (`@react-oauth/google`) |
-| AI Search | Google Gemini 1.5 Flash |
-| Mobile | Capacitor 8 (Android APK) |
-| Hosting | Netlify |
-| CI/CD | GitHub → Netlify auto-deploy |
-
----
-
-## 👥 Team
-
-**CampusFind** — Built for the college lost & found problem.  
-Department Project · 2025–2026
+MIT License — feel free to fork and adapt for your campus!
