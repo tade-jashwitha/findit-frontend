@@ -65,7 +65,7 @@ function DetailSheet({ item, onClose, user }) {
         {/* Details grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
           {[
-            ["📍 Location", item.building || item.location || "—"],
+            ["📍 Location", item.building || (typeof item.location === "object" && item.location !== null ? item.location.building || item.location.specificArea || "—" : item.location) || "—"],
             ["📅 Date", new Date(item.date || item.createdAt).toLocaleDateString()],
             ["🏷️ Category", item.category],
             ["📞 Contact", item.contactEmail || "—"],
@@ -243,7 +243,7 @@ export default function Browse({ setPage, user }) {
                         </div>
                         <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</p>
                         <p style={{ fontSize: 12, color: T.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          📍 {item.building || item.location || "Campus"}
+                          📍 {item.building || (typeof item.location === "object" && item.location !== null ? item.location.building || item.location.specificArea || "Campus" : item.location) || "Campus"}
                         </p>
                       </div>
                       <span style={{ color: T.text3, fontSize: 20, flexShrink: 0 }}>›</span>

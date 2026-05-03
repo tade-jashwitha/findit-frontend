@@ -212,7 +212,7 @@ export default function AIMatch({ setPage, items = [] }) {
 
                           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
                             <Badge type={item.type} />
-                            <span style={{ fontSize: 11, color: T.text3 }}>📍 {item.location}</span>
+                            <span style={{ fontSize: 11, color: T.text3 }}>📍 {typeof item.location === "object" && item.location !== null ? item.location.building || item.location.specificArea || "Campus" : item.location || item.building || "Campus"}</span>
                             <span style={{ fontSize: 11, color: T.text3 }}>📅 {item.date}</span>
                           </div>
                         </div>

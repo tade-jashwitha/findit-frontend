@@ -205,7 +205,13 @@ export default function Home({ setPage }) {
                           <span style={{ fontSize: 11, color: T.text3 }}>{timeAgo(item.createdAt || item.date)}</span>
                         </div>
                         <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</p>
-                        <p style={{ fontSize: 12, color: T.text2 }}>📍 {item.building || item.location || "Campus"}</p>
+                        <p style={{ fontSize: 12, color: T.text2 }}>📍 {
+                          item.building ||
+                          (typeof item.location === "object" && item.location !== null
+                            ? item.location.building || item.location.specificArea || "Campus"
+                            : item.location) ||
+                          "Campus"
+                        }</p>
                       </div>
                       <span style={{ color: T.text3, fontSize: 18, flexShrink: 0 }}>›</span>
                     </div>
