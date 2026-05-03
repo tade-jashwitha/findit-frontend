@@ -2,6 +2,7 @@
   "name": "findit-frontend",
   "version": "1.0.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",
     "@capacitor/cli": "^8.3.1",

@@ -3,7 +3,7 @@ import axios from "axios";
 
 // ── Base instance ─────────────────────────────────────────────────────
 const api = axios.create({
-  baseURL: "https://findit-backend-0v6p.onrender.com/api",
+  baseURL: process.env.REACT_APP_API_URL || "https://findit-backend-0v6p.onrender.com/api",
   headers: { "Content-Type": "application/json" },
 });
 // ── Attach JWT token to every request automatically ───────────────────
