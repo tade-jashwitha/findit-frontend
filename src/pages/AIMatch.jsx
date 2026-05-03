@@ -44,27 +44,50 @@ export default function AIMatch({ setPage }) {
       // Step 1: Ask backend (Gemini) to generate tags from the query
       const res  = await aiAPI.generateTags({ title: query, description: query, category: "Other" });
       const tags = res.data?.tags || [];
-      const lq   = query.toLowerCase();
+      const lq   = query.toLowerCase().trim();
+      const queryWords = lq.split(/\s+/).filter(w => w.length > 2);
 
       // Step 2: Score every real item against the tags + keywords
       const scored = items
         .map(item => {
           const loc  = getLocation(item.location, item.building);
           const text = `${item.title} ${item.description || ""} ${item.category} ${loc}`.toLowerCase();
-          const tagM  = tags.filter(t => text.includes(t.toLowerCase())).length;
-          const wordM = lq.split(/\s+/).filter(w => w.length > 2 && text.includes(w)).length;
-          const score = Math.min(
-            Math.round(((tagM * 20) + (wordM * 25)) / Math.max(tags.length, 1) * 8),
-            99
-          );
-          const reason = tagM > 0
-            ? `${tagM} AI tag${tagM > 1 ? "s" : ""} matched from your description`
-            : wordM > 0
-            ? `${wordM} keyword${wordM > 1 ? "s" : ""} overlap with your query`
+          const titleText = (item.title || "").toLowerCase();
+
+          // ── Signal 1: AI tag match ratio (0–1) ───────────────────────
+          const totalTags   = Math.max(tags.length, 1);
+          const matchedTags = tags.filter(t => text.includes(t.toLowerCase())).length;
+          const tagScore    = matchedTags / totalTags;
+
+          // ── Signal 2: Query word match ratio (0–1) ───────────────────
+          const totalWords   = Math.max(queryWords.length, 1);
+          const matchedWords = queryWords.filter(w => text.includes(w)).length;
+          const wordScore    = matchedWords / totalWords;
+
+          // ── Signal 3: Title direct match bonus (0 or 0.25) ───────────
+          const titleBonus = queryWords.some(w => titleText.includes(w)) ? 0.25 : 0;
+
+          // ── Signal 4: Category match bonus (0 or 0.15) ───────────────
+          const catText     = (item.category || "").toLowerCase();
+          const catBonus    = queryWords.some(w => catText.includes(w)) ? 0.15 : 0;
+
+          // ── Weighted final score ──────────────────────────────────────
+          // tagScore: 45%, wordScore: 30%, titleBonus: 25% bonus, catBonus: 15% bonus
+          const rawScore = (tagScore * 0.45) + (wordScore * 0.30) + titleBonus + catBonus;
+          const score    = Math.min(Math.round(rawScore * 100), 99);
+
+          // ── Reason string ─────────────────────────────────────────────
+          const reason = matchedTags > 0 && matchedWords > 0
+            ? `${matchedTags} AI tag${matchedTags > 1 ? "s" : ""} + ${matchedWords} keyword${matchedWords > 1 ? "s" : ""} matched`
+            : matchedTags > 0
+            ? `${matchedTags} of ${totalTags} AI tags matched`
+            : matchedWords > 0
+            ? `${matchedWords} of ${totalWords} keyword${matchedWords > 1 ? "s" : ""} matched`
             : "Low similarity";
+
           return { ...item, score, reason, _locationStr: loc };
         })
-        .filter(i => i.score >= 20)
+        .filter(i => i.score >= 15)
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
