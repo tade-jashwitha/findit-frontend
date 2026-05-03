@@ -1,11 +1,20 @@
-// src/pages/Report.jsx
+// src/pages/Report.jsx — with auto-match results display
 import { useState } from "react";
 import T from "../utils/tokens";
-import { Input, Button, Card, BottomNav } from "../components/shared";
+import { Input, Button, Card, Badge, BottomNav } from "../components/shared";
 import { itemsAPI, getErrorMessage } from "../utils/api";
 
 const CATEGORIES = ["Bags & Wallets", "Electronics", "Keys", "ID & Cards", "Clothing", "Books & Notes", "Accessories", "Other"];
 const CAT_EMOJI  = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
+
+const scoreColor = s => s >= 70 ? "#22C55E" : s >= 50 ? "#06B6D4" : "#F59E0B";
+
+function getLocation(item) {
+  if (!item) return "Campus";
+  if (item.location?.building) return item.location.building;
+  if (typeof item.location === "string") return item.location;
+  return item.building || "Campus";
+}
 
 export default function Report({ setPage, user }) {
   const [type,     setType]     = useState("lost");
@@ -14,6 +23,7 @@ export default function Report({ setPage, user }) {
   const [photo,    setPhoto]    = useState(null);
   const [loading,  setLoading]  = useState(false);
   const [success,  setSuccess]  = useState(false);
+  const [matches,  setMatches]  = useState([]);
   const [error,    setError]    = useState("");
 
   const set = key => e => setForm(f => ({ ...f, [key]: e.target.value }));
@@ -35,7 +45,9 @@ export default function Report({ setPage, user }) {
       fd.append("date",         new Date(form.date).toISOString());
       fd.append("contactEmail", form.contact.trim());
       if (photo) fd.append("image", photo);
-      await itemsAPI.create(fd);
+
+      const res = await itemsAPI.create(fd);
+      setMatches(res.data?.matches || []);
       setSuccess(true);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -44,24 +56,108 @@ export default function Report({ setPage, user }) {
     }
   };
 
+  // ── Success screen with match results ─────────────────────────────────
   if (success) return (
     <div style={{
-      minHeight: "100vh", background: T.bg, display: "flex",
-      flexDirection: "column", alignItems: "center", justifyContent: "center",
-      padding: 24, fontFamily: T.font, color: T.text, textAlign: "center",
+      minHeight: "100vh", background: T.bg,
+      color: T.text, fontFamily: T.font, paddingBottom: 100,
     }}>
-      <div style={{ fontSize: 72, animation: "float 2s ease infinite", marginBottom: 24 }}>🎉</div>
-      <h2 style={{ fontSize: 28, fontWeight: 900, letterSpacing: "-1px", marginBottom: 8 }}>Report Submitted!</h2>
-      <p style={{ color: T.text2, fontSize: 15, marginBottom: 32, maxWidth: 300, lineHeight: 1.6 }}>
-        Your {type} item has been posted. You'll be notified when a match is found.
-      </p>
-      <Button size="lg" onClick={() => { setSuccess(false); setForm({ title:"", location:"", date:"", description:"", contact:user?.email||"" }); }}>
-        Submit Another
-      </Button>
-      <button onClick={() => setPage("home")} style={{
-        marginTop: 14, background: "none", border: "none",
-        color: T.text2, cursor: "pointer", fontSize: 14, fontFamily: T.font,
-      }}>← Back to Home</button>
+      <div style={{ maxWidth: 520, margin: "0 auto", padding: "32px 20px" }}>
+
+        {/* Success header */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ fontSize: 64, animation: "float 2s ease infinite", marginBottom: 16 }}>🎉</div>
+          <h2 style={{ fontSize: 24, fontWeight: 900, letterSpacing: "-0.5px", marginBottom: 8 }}>Report Submitted!</h2>
+          <p style={{ color: T.text2, fontSize: 14, lineHeight: 1.6 }}>
+            Your {type} item has been posted to the campus network.
+          </p>
+        </div>
+
+        {/* ⚡ Possible Matches */}
+        {matches.length > 0 && (
+          <Card padding="20px" style={{ marginBottom: 20, border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.06)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+              <span style={{ fontSize: 20 }}>⚡</span>
+              <div>
+                <p style={{ fontWeight: 800, fontSize: 15, color: "#FCD34D" }}>Possible Matches Found!</p>
+                <p style={{ fontSize: 12, color: T.text2, marginTop: 2 }}>
+                  {matches.length} potential {type === "lost" ? "found" : "lost"} item{matches.length > 1 ? "s" : ""} may match yours
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {matches.map((m, i) => (
+                <div key={m.item?._id || i} style={{
+                  background: T.surfaceMd, borderRadius: T.r,
+                  padding: "12px 14px", border: `1px solid ${T.border}`,
+                  display: "flex", gap: 12, alignItems: "flex-start",
+                }}>
+                  <span style={{ fontSize: 24, flexShrink: 0 }}>{CAT_EMOJI[m.item?.category] || "📦"}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <p style={{ fontWeight: 700, fontSize: 13 }}>{m.item?.title}</p>
+                      <span style={{
+                        background: `${scoreColor(m.score)}22`,
+                        color: scoreColor(m.score),
+                        border: `1px solid ${scoreColor(m.score)}44`,
+                        padding: "2px 8px", borderRadius: 999,
+                        fontSize: 11, fontWeight: 800,
+                      }}>{m.score}%</span>
+                    </div>
+                    <p style={{ fontSize: 11, color: T.text3, marginBottom: 4 }}>
+                      📍 {getLocation(m.item)} · <Badge type={m.item?.type} />
+                    </p>
+                    {m.reasons?.length > 0 && (
+                      <p style={{ fontSize: 11, color: "#A78BFA", fontStyle: "italic" }}>
+                        🤖 {m.reasons.slice(0, 2).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setPage("browse")}
+              style={{
+                width: "100%", marginTop: 14, padding: "11px",
+                background: "rgba(245,158,11,0.12)",
+                border: "1px solid rgba(245,158,11,0.35)",
+                borderRadius: T.rMd, color: "#FCD34D",
+                fontFamily: T.font, fontSize: 13, fontWeight: 600, cursor: "pointer",
+              }}
+            >
+              View All Matches in Browse →
+            </button>
+          </Card>
+        )}
+
+        {/* No matches */}
+        {matches.length === 0 && (
+          <Card padding="16px" style={{ marginBottom: 20, textAlign: "center" }}>
+            <p style={{ fontSize: 13, color: T.text2 }}>
+              🔍 No exact matches yet — you'll be notified when one is found!
+            </p>
+          </Card>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <Button fullWidth size="lg" onClick={() => {
+            setSuccess(false);
+            setMatches([]);
+            setForm({ title: "", location: "", date: "", description: "", contact: user?.email || "" });
+          }}>
+            Submit Another Report
+          </Button>
+          <button onClick={() => setPage("home")} style={{
+            background: "none", border: "none", color: T.text2,
+            cursor: "pointer", fontSize: 14, fontFamily: T.font, padding: 8,
+          }}>← Back to Home</button>
+        </div>
+      </div>
+      <BottomNav active="report" setPage={setPage} />
     </div>
   );
 
@@ -77,7 +173,7 @@ export default function Report({ setPage, user }) {
               cursor: "pointer", fontSize: 13, fontFamily: T.font, marginBottom: 12, padding: 0, display: "flex", alignItems: "center", gap: 4,
             }}>← Back</button>
             <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 4 }}>Report Item</h1>
-            <p style={{ fontSize: 13, color: T.text2 }}>Help others identify your item</p>
+            <p style={{ fontSize: 13, color: T.text2 }}>AI will automatically match your report with existing listings</p>
           </div>
 
           {/* Lost / Found toggle */}
@@ -171,8 +267,13 @@ export default function Report({ setPage, user }) {
             )}
 
             <Button fullWidth size="lg" loading={loading} onClick={handleSubmit}>
-              Submit Report ↗
+              {loading ? "Submitting & Matching…" : "Submit Report ↗"}
             </Button>
+            {!loading && (
+              <p style={{ fontSize: 11, color: T.text3, textAlign: "center", marginTop: 10 }}>
+                🤖 AI will automatically scan for matches on submission
+              </p>
+            )}
           </Card>
         </div>
       </div>

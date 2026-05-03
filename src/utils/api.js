@@ -106,4 +106,21 @@ export const aiAPI = {
   generateTags: (data) => api.post("/ai/tags", data),
 };
 
+// ═══════════════════════════════════════════════════════════════════════
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+export const notificationsAPI = {
+  getAll:    ()   => api.get("/notifications"),
+  readAll:   ()   => api.patch("/notifications/read-all"),
+  readOne:   (id) => api.patch(`/notifications/${id}/read`),
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// CLAIMS
+// ═══════════════════════════════════════════════════════════════════════
+export const claimsAPI = {
+  sendClaim:   (itemId, message) => api.post(`/items/${itemId}/claim`, { message }),
+  updateClaim: (itemId, claimId, status) => api.patch(`/items/${itemId}/claim/${claimId}`, { status }),
+};
+
 export default api;
