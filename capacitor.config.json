@@ -1,0 +1,20 @@
+{
+  "appId": "com.campusfind.app",
+  "appName": "CampusFind",
+  "webDir": "build",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#0A0A0F",
+      "showSpinner": false
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "852596135869-jbjrjf9d0jc4g5ddb2bea442mg2kv6f4.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
+}

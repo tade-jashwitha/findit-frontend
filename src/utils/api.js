@@ -2,10 +2,17 @@
 import axios from "axios";
 
 // ── Base instance ─────────────────────────────────────────────────────
+const BASE_URL = process.env.REACT_APP_API_URL || "https://findit-backend-0v6p.onrender.com/api";
+
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "https://findit-backend-0v6p.onrender.com/api",
+  baseURL: BASE_URL,
+  timeout: 30000,   // 30s — Render free tier needs up to 30s to wake from sleep
   headers: { "Content-Type": "application/json" },
 });
+
+// ── Wake up Render backend on app load (prevents cold-start timeout) ──
+export const wakeUpBackend = () =>
+  axios.get(`${BASE_URL}/health`, { timeout: 60000 }).catch(() => null);
 // ── Attach JWT token to every request automatically ───────────────────
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("findit_token");

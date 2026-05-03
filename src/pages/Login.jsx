@@ -1,17 +1,54 @@
 // src/pages/Login.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleAuth } from "@codetrix-studio/capacitor-google-auth";
 import T from "../utils/tokens";
 import AILogo from "../components/AILogo";
 import { Input, Button, Divider } from "../components/shared";
 import api from "../utils/api";
 
+// Detect if running inside Capacitor (Android/iOS APK)
+const isNativeApp = () => {
+  return window?.Capacitor?.isNativePlatform?.() ||
+    /wv|WebView/.test(navigator.userAgent) ||
+    typeof window.Android !== "undefined";
+};
+
 export default function Login({ setPage, setUser }) {
+  const isNative = isNativeApp();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [gLoading, setGLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (isNative) {
+      try {
+        GoogleAuth.initialize({
+          clientId: "852596135869-jbjrjf9d0jc4g5ddb2bea442mg2kv6f4.apps.googleusercontent.com",
+          scopes: ["profile", "email"],
+          grantOfflineAccess: true,
+        });
+      } catch (e) { console.warn("GoogleAuth init error", e); }
+    }
+  }, [isNative]);
+
+  const handleNativeGoogleLogin = async () => {
+    setGLoading(true); setError("");
+    try {
+      const gUser = await GoogleAuth.signIn();
+      const info = { name: gUser.name, email: gUser.email, picture: gUser.imageUrl };
+      const res = await api.post("/auth/google", info);
+      if (res.data.success) {
+        const user = res.data.data;
+        localStorage.setItem("findit_token", res.data.token);
+        localStorage.setItem("findit_user", JSON.stringify(user));
+        setUser(user);
+      } else setError(res.data.message || "Google login failed");
+    } catch (err) { setError(err?.message || "Google login cancelled."); }
+    finally { setGLoading(false); }
+  };
 
   const googleLogin = useGoogleLogin({
     flow: "implicit",
@@ -24,6 +61,7 @@ export default function Login({ setPage, setUser }) {
         const res = await api.post("/auth/google", info);
         if (res.data.success) {
           const user = res.data.data;
+          localStorage.setItem("findit_token", res.data.token);
           localStorage.setItem("findit_user", JSON.stringify(user));
           setUser(user);
         } else setError(res.data.message || "Google login failed");
@@ -33,7 +71,6 @@ export default function Login({ setPage, setUser }) {
     onError: () => setError("Google login cancelled."),
     onNonOAuthError: () => setError("Popup closed. Please try again."),
   });
-
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -95,9 +132,9 @@ export default function Login({ setPage, setUser }) {
             </div>
           )}
 
-          {/* Google button */}
+          {/* Google button — works on web AND native */}
           <button
-            onClick={() => googleLogin()}
+            onClick={() => isNative ? handleNativeGoogleLogin() : googleLogin()}
             disabled={gLoading || loading}
             style={{
               width: "100%", padding: "13px 16px", borderRadius: T.r,
@@ -115,7 +152,6 @@ export default function Login({ setPage, setUser }) {
             }
             Continue with Google
           </button>
-
           <Divider label="OR" />
 
           {/* Email form */}

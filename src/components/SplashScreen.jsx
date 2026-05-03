@@ -2,12 +2,15 @@
 import AILogo from "./AILogo";
 import T from "../utils/tokens";
 import { useEffect } from "react";
+import { wakeUpBackend } from "../utils/api";
 
 export default function SplashScreen({ onFinish }) {
   useEffect(() => {
+    wakeUpBackend(); // 🔥 Wake Render backend during splash (prevents cold-start timeout)
     const t = setTimeout(onFinish, 2200);
     return () => clearTimeout(t);
   }, [onFinish]);
+
 
   return (
     <div style={{

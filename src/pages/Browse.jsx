@@ -254,23 +254,49 @@ export default function Browse({ setPage, user }) {
   const [search,    setSearch]    = useState("");
   const [type,      setType]      = useState("all");
   const [cat,       setCat]       = useState("All");
-  const [sortBy,    setSortBy]    = useState("recent");  // "recent" | "matches"
+  const [sortBy,    setSortBy]    = useState("recent");
   const [sel,       setSel]       = useState(null);
   const [claimItem, setClaimItem] = useState(null);
   const [focused,   setFocused]   = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
-    api.get("/items", { params: { sort: sortBy } })
-      .then(r => {
-        const d = r.data;
-        let arr = [];
-        if (Array.isArray(d?.data)) arr = d.data;
-        else if (Array.isArray(d))  arr = d;
-        setItems(arr);
-        setLoading(false);
-      })
-      .catch(() => { setError("Could not connect to server."); setLoading(false); });
-  }, [sortBy]);
+    let autoRetryTimer = null;
+    let countdownTimer = null;
+
+    const fetchItems = () => {
+      setLoading(true); setError(""); setCountdown(0);
+      api.get("/items", { params: { sort: sortBy } })
+        .then(r => {
+          const d = r.data;
+          let arr = [];
+          if (Array.isArray(d?.data)) arr = d.data;
+          else if (Array.isArray(d))  arr = d;
+          setItems(arr);
+          setLoading(false);
+        })
+        .catch(() => {
+          setLoading(false);
+          setError("Server is waking up… connecting automatically.");
+          // Auto-retry countdown: 15s
+          let secs = 15;
+          setCountdown(secs);
+          countdownTimer = setInterval(() => {
+            secs -= 1;
+            setCountdown(secs);
+            if (secs <= 0) clearInterval(countdownTimer);
+          }, 1000);
+          // Auto-retry after 15s
+          autoRetryTimer = setTimeout(fetchItems, 15000);
+        });
+    };
+
+    fetchItems();
+    return () => { clearTimeout(autoRetryTimer); clearInterval(countdownTimer); };
+  }, [sortBy, retryCount]);
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -308,10 +334,28 @@ export default function Browse({ setPage, user }) {
           {error && (
             <div style={{
               background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
-              borderRadius: T.r, padding: "10px 14px", marginBottom: 16,
-              fontSize: 13, color: "#F59E0B",
-            }}>⚠️ {error}</div>
+              borderRadius: T.r, padding: "14px 16px", marginBottom: 16,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 16, height: 16, border: "2px solid rgba(245,158,11,0.3)", borderTop: "2px solid #F59E0B", borderRadius: "50%", animation: "spin 1s linear infinite", flexShrink: 0 }} />
+                <p style={{ fontSize: 13, color: "#F59E0B", fontWeight: 600 }}>🌐 Server is waking up…</p>
+              </div>
+              <p style={{ fontSize: 12, color: "#FCD34D", marginBottom: 10 }}>
+                {countdown > 0 ? `Auto-retrying in ${countdown}s…` : "Retrying now…"}
+              </p>
+              <button
+                onClick={() => { setRetryCount(c => c + 1); }}
+                style={{
+                  padding: "7px 16px", borderRadius: 999, border: "none",
+                  background: "#F59E0B", color: "#000",
+                  fontFamily: T.font, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                }}
+              >🔄 Retry Now</button>
+            </div>
           )}
+
+
+
 
           {/* Search */}
           <div style={{

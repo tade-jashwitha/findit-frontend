@@ -12,13 +12,22 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import T from "./utils/tokens";
 
+// ── Detect native APK (Capacitor WebView) ─────────────────────────────
+const isNativeApp = () =>
+  window?.Capacitor?.isNativePlatform?.() ||
+  /wv|WebView/.test(navigator.userAgent) ||
+  typeof window.Android !== "undefined";
+
 export default function App() {
   const [user, setUser] = useState(() => {
-    try { const s = localStorage.getItem("findit_user"); return s ? JSON.parse(s) : null; }
-    catch { return null; }
+    try {
+      const s = localStorage.getItem("findit_user");
+      if (s) return JSON.parse(s);
+      return null;
+    } catch { return null; }
   });
 
-  const [page, setPage] = useState("splash");
+  const [page, setPage]       = useState("splash");
   const [savedIds, setSavedIds] = useState([]);
 
   const handleSplashFinish = useCallback(() => {
@@ -50,29 +59,21 @@ export default function App() {
   // ── Splash ──
   if (page === "splash") return <SplashScreen onFinish={handleSplashFinish} />;
 
-  // ── Auth (no navbar) ──
-  if (page === "login") return (
-    <><Login setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>
-  );
-  if (page === "register") return (
-    <><Register setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>
-  );
+  // ── Auth pages ──
+  if (page === "login")    return <><Login setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>;
+  if (page === "register") return <><Register setPage={setPage} setUser={handleSetUser} /><ToastContainer /></>;
 
   // ── Main app ──
   return (
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
       <Navbar page={page} setPage={navigate} user={user} setUser={handleSetUser} />
-
       <main>
-        {page === "home" && <Home setPage={navigate} onToggleSave={toggleSave} />}
-        {page === "browse" && <Browse setPage={navigate} user={user} onToggleSave={toggleSave} />}
-        {page === "report" && user && <Report user={user} setPage={navigate} />}
-        {page === "report" && !user && navigate("login")}
-        {page === "ai" && <AIMatch setPage={navigate} />}
+        {page === "home"      && <Home setPage={navigate} onToggleSave={toggleSave} />}
+        {page === "browse"    && <Browse setPage={navigate} user={user} onToggleSave={toggleSave} />}
+        {page === "report"    && user && <Report user={user} setPage={navigate} />}
+        {page === "ai"        && <AIMatch setPage={navigate} />}
         {page === "dashboard" && user && <Dashboard user={user} setPage={navigate} />}
-        {page === "dashboard" && !user && navigate("login")}
       </main>
-
       <ToastContainer />
     </div>
   );
