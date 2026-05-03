@@ -24,6 +24,61 @@ When a student loses something on campus (phone, keys, bag, ID), they often have
 
 ---
 
+## 🏗️ System Architecture
+
+This diagram shows how all parts of CampusFind connect to each other:
+
+```
+┌─────────────────────────────────────────────────┐
+│                FRONTEND (Netlify)                │
+│                                                 │
+│   React App                                     │
+│   ├── Pages (Home, Browse, Report, AI, ...)     │
+│   ├── Components (Card, Button, Badge...)       │
+│   └── Axios API Client (api.js)                 │
+│         │                                       │
+│         │ HTTPS requests                        │
+└─────────┼───────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────────────────────────────┐
+│                BACKEND (Render)                  │
+│                                                 │
+│   Express Server (server.js)                    │
+│   ├── CORS → allows only trusted origins        │
+│   ├── JWT Middleware → verifies login tokens    │
+│   ├── /api/auth  → login, register, Google      │
+│   ├── /api/items → report, browse, delete       │
+│   └── /api/ai    → tag generation, matching     │
+│         │                │           │          │
+└─────────┼────────────────┼───────────┼──────────┘
+          │                │           │
+          ▼                ▼           ▼
+   ┌────────────┐  ┌──────────────┐  ┌───────────────┐
+   │ MongoDB    │  │  Cloudinary  │  │ Google Gemini │
+   │ Atlas      │  │  (Images)    │  │ AI (Tags)     │
+   │ (Database) │  └──────────────┘  └───────────────┘
+   └────────────┘
+
+External Auth:
+   ┌──────────────┐
+   │ Google OAuth │ ← User clicks "Continue with Google"
+   │ (Login only) │   Frontend gets token → sends to backend
+   └──────────────┘
+```
+
+### What happens when a user opens the app:
+```
+1. Browser loads React app from Netlify
+2. App shows Splash Screen → then Login page
+3. User logs in → backend returns JWT token
+4. Token saved in browser (localStorage)
+5. Every API request includes the token in the header
+6. Backend verifies token → returns user-specific data
+```
+
+---
+
 ## 🖥️ Pages & What They Do
 
 | Page | What it does |
