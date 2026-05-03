@@ -1,249 +1,239 @@
-# 🎒 CampusFind — Frontend
+# 🎓 CampusFind — Frontend
 
-> **CampusFind** is an AI-powered Lost & Found web app for college campuses.  
-> Students can report lost/found items, search listings, and use AI to find matches instantly.
+> **AI-powered Lost & Found platform for college campuses**  
+> Built with React · Deployed on Netlify · Connected to Render backend
 
----
-
-## 📌 What is this project?
-
-When a student loses something on campus (phone, keys, bag, ID), they often have no way to check if someone found it. CampusFind solves this by:
-
-- Letting **finders** post what they found
-- Letting **losers** search and describe their item
-- Using **AI (Google Gemini)** to automatically match lost items with found ones
+[![Netlify Status](https://api.netlify.com/api/v1/badges/campusfoundandlost/deploy-status)](https://campusfoundandlost.netlify.app)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
-## 🌐 Live App
+## 🌐 Live Demo
 
-| | URL |
-|--|--|
-| **Frontend** | https://your-app.netlify.app |
-| **Backend API** | https://findit-backend-0v6p.onrender.com/api |
+| Platform | URL |
+|----------|-----|
+| 🌍 Web App | [campusfoundandlost.netlify.app](https://campusfoundandlost.netlify.app) |
+| 📱 Android APK | Available in `/android/app/build/outputs/apk/debug/` |
+| 🔧 Backend API | [findit-backend-0v6p.onrender.com/api](https://findit-backend-0v6p.onrender.com/api) |
 
 ---
 
-## 🏗️ System Architecture
+## ✨ Features
 
-This diagram shows how all parts of CampusFind connect to each other:
+### 🤖 AI Matching System
+- Automatically matches LOST and FOUND items on submission
+- 4-signal weighted scoring: **Title (30%) + Description (20%) + Category (20%) + Location (15%) + Date (10%) + AI Tags (5%)**
+- Returns match confidence score (0–100%)
+- Shows **"⚡ Possible Matches Found"** with reasons on the Report success screen
+
+### 📩 Claim / Verification System
+- Structured claim flow replacing direct email contact
+- Finder → sends claim with message → Owner reviews → Accept / Reject
+- Both parties notified at every step
+- Item status automatically updates to **"Claimed"** on approval
+
+### 🔔 In-App Notifications
+- Real-time notification bell in Navbar (polls every 30s)
+- Unread count badge on bell icon
+- Notifications for: match found · claim received · claim approved/rejected
+- Dropdown with full notification history
+
+### 🧠 Smart Sorting
+- Toggle between **🕐 By Recent** and **⚡ By Match Score**
+- Match score badges (color-coded) shown on each item card
+- AI match reasons displayed in item detail sheet
+
+### 🔐 Authentication
+- Email/password registration & login with JWT
+- Google OAuth 2.0 (one-click sign in)
+- Auto-redirect on 401, token stored in localStorage
+
+### 📱 Mobile APK
+- Built with Capacitor 8
+- Android debug APK included
+- Full native app experience
+
+---
+
+## 🏗️ Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                FRONTEND (Netlify)                │
-│                                                 │
-│   React App                                     │
-│   ├── Pages (Home, Browse, Report, AI, ...)     │
-│   ├── Components (Card, Button, Badge...)       │
-│   └── Axios API Client (api.js)                 │
-│         │                                       │
-│         │ HTTPS requests                        │
-└─────────┼───────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────┐
-│                BACKEND (Render)                  │
-│                                                 │
-│   Express Server (server.js)                    │
-│   ├── CORS → allows only trusted origins        │
-│   ├── JWT Middleware → verifies login tokens    │
-│   ├── /api/auth  → login, register, Google      │
-│   ├── /api/items → report, browse, delete       │
-│   └── /api/ai    → tag generation, matching     │
-│         │                │           │          │
-└─────────┼────────────────┼───────────┼──────────┘
-          │                │           │
-          ▼                ▼           ▼
-   ┌────────────┐  ┌──────────────┐  ┌───────────────┐
-   │ MongoDB    │  │  Cloudinary  │  │ Google Gemini │
-   │ Atlas      │  │  (Images)    │  │ AI (Tags)     │
-   │ (Database) │  └──────────────┘  └───────────────┘
-   └────────────┘
-
-External Auth:
-   ┌──────────────┐
-   │ Google OAuth │ ← User clicks "Continue with Google"
-   │ (Login only) │   Frontend gets token → sends to backend
-   └──────────────┘
-```
-
-### What happens when a user opens the app:
-```
-1. Browser loads React app from Netlify
-2. App shows Splash Screen → then Login page
-3. User logs in → backend returns JWT token
-4. Token saved in browser (localStorage)
-5. Every API request includes the token in the header
-6. Backend verifies token → returns user-specific data
+┌─────────────────────────────────────────────────────────┐
+│                    FRONTEND (React)                      │
+│                  Netlify CDN Deploy                      │
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │
+│  │  Browse  │  │  Report  │  │ AIMatch  │  │  Auth  │ │
+│  │ + Claims │  │ + Matches│  │ (Gemini) │  │ Google │ │
+│  └──────────┘  └──────────┘  └──────────┘  └────────┘ │
+│                                                         │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │         Axios API Utility (src/utils/api.js)    │   │
+│  │  • JWT auto-attach  • 401 auto-redirect         │   │
+│  └─────────────────────────────────────────────────┘   │
+└─────────────────────────┬───────────────────────────────┘
+                          │ HTTPS REST API
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                   BACKEND (Node/Express)                 │
+│                   Render.com Deploy                      │
+│                                                         │
+│  /api/auth        /api/items         /api/ai            │
+│  /api/notifications  /api/items/:id/claim               │
+│                                                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
+│  │  MongoDB     │  │  Cloudinary  │  │   Gemini AI  │  │
+│  │  Atlas       │  │  (Images)    │  │  (Tags/Match)│  │
+│  └──────────────┘  └──────────────┘  └──────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🖥️ Pages & What They Do
-
-| Page | What it does |
-|------|-------------|
-| **Home** | Shows campus stats (lost/found/reunited count) and recent activity |
-| **Browse** | Lists all reported items — search by keyword, filter by type/category |
-| **Report** | Form to report a lost OR found item (with optional photo upload) |
-| **AI Match** | Type a description of your lost item — AI ranks the best matches |
-| **Dashboard** | Shows your own reports — their status, dates, locations |
-| **Login** | Sign in with Email/Password or Google account |
-| **Register** | Create a new campus account |
-
----
-
-## 🧰 Tech Stack (What tools are used and why)
-
-| Tool | Why it's used |
-|------|--------------|
-| **React 18** | Builds the UI with reusable components |
-| **Axios** | Sends HTTP requests to the backend API |
-| **@react-oauth/google** | Handles "Continue with Google" login |
-| **Google Gemini AI** | (via backend) Generates smart search tags |
-| **CSS-in-JS (inline styles)** | All styling done in JavaScript — no separate CSS files |
-| **Google Fonts (Inter)** | Clean, modern typography |
-| **Netlify** | Hosts and auto-deploys the frontend |
-
----
-
-## 📁 Folder Structure Explained
+## 📁 Project Structure
 
 ```
 frontend/
-│
 ├── public/
-│   ├── index.html          ← The single HTML page (React mounts here)
-│   └── favicon.png         ← Browser tab icon
-│
+│   └── index.html              # Meta tags, favicon, PWA config
 ├── src/
-│   ├── App.jsx             ← Main app: controls which page is shown
-│   ├── index.js            ← Entry point (renders App into index.html)
-│   ├── index.css           ← Global animations (@keyframes) and font import
-│   │
-│   ├── pages/              ← One file per page/screen
-│   │   ├── Home.jsx
-│   │   ├── Browse.jsx
-│   │   ├── Report.jsx
-│   │   ├── AIMatch.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── Login.jsx
-│   │   └── Register.jsx
-│   │
-│   ├── components/         ← Reusable building blocks used across pages
-│   │   ├── shared.jsx      ← Card, Button, Badge, Input, Skeleton, BottomNav
-│   │   ├── Navbar.jsx      ← Top header with navigation
-│   │   ├── SplashScreen.jsx ← Loading screen shown when app first opens
-│   │   ├── AILogo.jsx      ← Animated SVG logo
-│   │   └── ToastContainer.jsx ← Notification pop-ups
-│   │
-│   └── utils/              ← Helper files (not UI)
-│       ├── api.js          ← All API calls defined here (login, items, AI...)
-│       └── tokens.js       ← Design system: colors, spacing, fonts as variables
-│
-├── .env                    ← Secret keys (NOT committed to git)
-├── netlify.toml            ← Netlify build + routing config
-└── package.json            ← Project info + dependencies list
+│   ├── components/
+│   │   ├── Navbar.jsx          # 🔔 Notification bell + nav links
+│   │   ├── AILogo.jsx          # Animated logo component
+│   │   └── shared/             # Button, Card, Input, Badge, Skeleton
+│   ├── pages/
+│   │   ├── Home.jsx            # Landing with stats
+│   │   ├── Browse.jsx          # ⚡ Match scores + Claim modal + Smart sort
+│   │   ├── Report.jsx          # Submit form + auto-match results
+│   │   ├── AIMatch.jsx         # Image-based AI search
+│   │   ├── Dashboard.jsx       # My items + claim requests
+│   │   ├── Login.jsx           # JWT + Google OAuth
+│   │   └── Register.jsx        # New user registration
+│   ├── utils/
+│   │   └── api.js              # Axios instance + all API calls
+│   └── utils/
+│       └── tokens.js           # Design system tokens
+├── android/                    # Capacitor Android project
+├── capacitor.config.json       # App ID, webDir config
+├── netlify.toml                # Redirect rules for SPA
+└── .env                        # Environment variables
 ```
 
 ---
 
-## 🔐 How Authentication Works (Simple Explanation)
+## ⚙️ Environment Variables
 
-```
-Email Login:
-  User types email + password
-    → Frontend sends to backend
-    → Backend checks password (bcrypt)
-    → Backend sends back a TOKEN (like a digital badge)
-    → Frontend saves token in browser localStorage
-    → Token is attached to every future API request
+Create a `.env` file in the frontend root:
 
-Google Login:
-  User clicks "Continue with Google"
-    → Google gives a temporary code
-    → Frontend sends user info to backend
-    → Backend creates/finds the account
-    → User is logged in (no password needed)
+```env
+REACT_APP_GOOGLE_CLIENT_ID=your_google_oauth_client_id
+REACT_APP_API_URL=https://findit-backend-0v6p.onrender.com/api
 ```
+
+> ⚠️ **Never commit `.env` to GitHub** — it's in `.gitignore`
 
 ---
 
-## 🤖 How AI Matching Works
-
-```
-1. User types: "black Sony earphones, scratched left earbud, lost in library"
-2. Frontend sends this to backend → backend asks Gemini AI
-3. Gemini returns tags: ["sony", "earphones", "black", "wireless", "library"]
-4. Frontend scores every item in the database using 4 signals:
-     - How many AI tags match the item? (45% weight)
-     - How many words from the description match? (30% weight)
-     - Does the title contain a query word? (+25 bonus)
-     - Does the category match? (+15 bonus)
-5. Items sorted by score → top 5 shown with % accuracy
-```
-
----
-
-## 🚀 How to Run Locally
-
-### Prerequisites
-- Node.js v18+ installed
-- Backend server running (see backend README)
-
-### Steps
+## 🚀 Local Development
 
 ```bash
-# 1. Clone the repo
-git clone https://github.com/tade-jashwitha/findit-frontend.git
-cd findit-frontend
+# Install dependencies
+npm install
 
-# 2. Install packages
-npm install --legacy-peer-deps
-
-# 3. Create environment file
-# Create a file called .env in this folder and paste:
-REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
-REACT_APP_API_URL=https://findit-backend-0v6p.onrender.com/api
-
-# 4. Start the app
+# Start development server (http://localhost:3000)
 npm start
-# Opens at http://localhost:3000
+
+# Build for production
+npm run build
 ```
 
 ---
 
-## 🌍 How to Deploy on Netlify
+## 📦 Building the Android APK
 
-1. Push code to GitHub
-2. Go to [netlify.com](https://netlify.com) → New site → Import from GitHub
-3. Set these settings:
-   - **Build command:** `npm run build`
-   - **Publish directory:** `build`
-4. Add Environment Variables in Netlify dashboard:
-   ```
-   REACT_APP_GOOGLE_CLIENT_ID = your-client-id.apps.googleusercontent.com
-   REACT_APP_API_URL = https://your-backend.onrender.com/api
-   ```
-5. Click Deploy — Netlify auto-deploys on every future push to `main`
+### Prerequisites
+- Android Studio installed
+- Android SDK at `C:\Users\<you>\AppData\Local\Android\Sdk`
 
-> ⚠️ The `netlify.toml` file already handles SPA routing — no extra config needed.
+```bash
+# 1. Build React production bundle
+npm run build
 
----
+# 2. Sync to Android
+npx cap sync android
 
-## 🔑 Environment Variables Explained
+# 3. Build APK (uses Android Studio's JDK 21)
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+$env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+cd android
+.\gradlew.bat assembleDebug
+```
 
-| Variable | What it is | Where to get it |
-|----------|-----------|----------------|
-| `REACT_APP_GOOGLE_CLIENT_ID` | Your Google OAuth app ID | [console.cloud.google.com](https://console.cloud.google.com) → Credentials |
-| `REACT_APP_API_URL` | Your backend API base URL | Your Render backend URL + `/api` |
+APK output: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
-## 🔗 Related
-- **Backend Repo:** [findit-backend](https://github.com/tade-jashwitha/findit-backend)
+## 🌍 Netlify Deployment
+
+### Environment Variables (set in Netlify Dashboard)
+```
+REACT_APP_GOOGLE_CLIENT_ID = <your_client_id>
+REACT_APP_API_URL           = https://findit-backend-0v6p.onrender.com/api
+```
+
+### `netlify.toml`
+```toml
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200
+```
+
+### Google OAuth for Production
+In [Google Cloud Console](https://console.cloud.google.com) → OAuth Client → add:
+- **Authorized JavaScript Origins:** `https://campusfoundandlost.netlify.app`
+- **Authorized Redirect URIs:** `https://campusfoundandlost.netlify.app`
 
 ---
 
-## 👩‍💻 Author
-Made by **Jashwitha Tade**
+## 🔌 API Reference
+
+All requests go to `REACT_APP_API_URL` base URL.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register` | Register with email/password |
+| `POST` | `/auth/login` | Login → returns JWT |
+| `POST` | `/auth/google` | Google OAuth → returns JWT |
+| `GET` | `/items` | Browse items (filter + sort) |
+| `POST` | `/items` | Submit new item → auto-match runs |
+| `GET` | `/items/:id` | Item detail with match data |
+| `POST` | `/items/:id/claim` | Send claim request |
+| `PATCH` | `/items/:id/claim/:claimId` | Approve/reject claim |
+| `GET` | `/notifications` | Get my notifications |
+| `PATCH` | `/notifications/read-all` | Mark all as read |
+| `POST` | `/ai/match` | Image-based AI item matching |
+| `POST` | `/ai/tags` | Generate AI tags for item |
+
+---
+
+## 👩‍💻 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI Framework | React 18 |
+| Styling | Vanilla CSS (inline design tokens) |
+| HTTP Client | Axios |
+| Auth | JWT + Google OAuth 2.0 (`@react-oauth/google`) |
+| AI Search | Google Gemini 1.5 Flash |
+| Mobile | Capacitor 8 (Android APK) |
+| Hosting | Netlify |
+| CI/CD | GitHub → Netlify auto-deploy |
+
+---
+
+## 👥 Team
+
+**CampusFind** — Built for the college lost & found problem.  
+Department Project · 2025–2026
