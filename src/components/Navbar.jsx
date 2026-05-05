@@ -54,7 +54,7 @@ export function Navbar({ page, setPage, user, setUser }) {
   return (
     <header style={{
       position: "sticky", top: 0, zIndex: 200,
-      background: "rgba(10,10,15,0.85)",
+      background: "rgba(255,255,255,0.85)",
       backdropFilter: "blur(24px)",
       borderBottom: `1px solid ${T.border}`,
       height: 60,
@@ -78,8 +78,8 @@ export function Navbar({ page, setPage, user, setUser }) {
         {LINKS.map(l => (
           <button key={l.id} onClick={() => go(l.id)} style={{
             padding: "6px 14px", borderRadius: T.r, border: "none",
-            background: page === l.id ? "rgba(124,58,237,0.12)" : "transparent",
-            color: page === l.id ? "#A78BFA" : T.text2,
+            background: page === l.id ? "rgba(6,182,212,0.12)" : "transparent",
+            color: page === l.id ? "#0891B2" : T.text2,
             fontWeight: page === l.id ? 600 : 500, fontSize: 14, cursor: "pointer",
             transition: "all 0.15s",
           }}>
@@ -96,7 +96,7 @@ export function Navbar({ page, setPage, user, setUser }) {
           <div style={{ position: "relative" }}>
             <button onClick={openNotifs} style={{
               width: 36, height: 36, borderRadius: T.r, border: `1px solid ${T.border}`,
-              background: notifOpen ? "rgba(124,58,237,0.12)" : "transparent",
+              background: notifOpen ? "rgba(6,182,212,0.12)" : "transparent",
               cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 18, position: "relative", transition: "all 0.15s",
             }}>
@@ -141,7 +141,7 @@ export function Navbar({ page, setPage, user, setUser }) {
                     notifs.map(n => (
                       <div key={n._id} style={{
                         padding: "12px 16px",
-                        background: n.read ? "transparent" : "rgba(124,58,237,0.06)",
+                        background: n.read ? "transparent" : "rgba(6,182,212,0.06)",
                         borderBottom: `1px solid ${T.border}`,
                         cursor: "pointer",
                       }}
@@ -156,7 +156,7 @@ export function Navbar({ page, setPage, user, setUser }) {
                         {!n.read && (
                           <span style={{
                             display: "inline-block", width: 6, height: 6,
-                            borderRadius: "50%", background: "#7C3AED",
+                            borderRadius: "50%", background: "#0891B2",
                             marginTop: 4,
                           }} />
                         )}
@@ -176,7 +176,7 @@ export function Navbar({ page, setPage, user, setUser }) {
               background: T.grad, border: "none", cursor: "pointer",
               display: "flex", alignItems: "center", justifyContent: "center",
               overflow: "hidden", flexShrink: 0,
-              boxShadow: "0 2px 8px rgba(124,58,237,0.4)",
+              boxShadow: "0 2px 8px rgba(6,182,212,0.4)",
             }}>
               {user.picture
                 ? <img src={user.picture} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} referrerPolicy="no-referrer" />
@@ -201,7 +201,7 @@ export function Navbar({ page, setPage, user, setUser }) {
               padding: "6px 16px", borderRadius: T.r, border: "none",
               background: T.grad, color: "#fff",
               fontSize: 13, fontWeight: 600, cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(124,58,237,0.35)",
+              boxShadow: "0 4px 14px rgba(6,182,212,0.35)",
             }}>Get started</button>
           </>
         )}

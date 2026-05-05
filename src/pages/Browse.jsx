@@ -1,11 +1,10 @@
 // src/pages/Browse.jsx — with claim system, match scores, smart sort
 import { useState, useEffect, useMemo } from "react";
 import T from "../utils/tokens";
-import { Card, Badge, Skeleton, BottomNav } from "../components/shared";
+import { Card, Badge, Skeleton, BottomNav, CategoryIcon, ScorePill } from "../components/shared";
 import api, { claimsAPI, getErrorMessage } from "../utils/api";
 
-const EMOJI = { "Bags & Wallets":"🎒", Electronics:"📱", Keys:"🔑", "ID & Cards":"🪪", Clothing:"👕", "Books & Notes":"📚", Accessories:"💍", Other:"📦" };
-const CATS  = ["All", "Bags & Wallets", "Electronics", "Keys", "ID & Cards", "Clothing", "Books & Notes", "Accessories", "Other"];
+const CATS = ["All", "Bags & Wallets", "Electronics", "Keys", "ID & Cards", "Clothing", "Books & Notes", "Accessories", "Other"];
 
 function timeAgo(d) {
   const m = Math.floor((Date.now() - new Date(d)) / 60000);
@@ -49,7 +48,7 @@ function ClaimModal({ item, user, onClose, onSuccess }) {
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      style={{ position: "fixed", inset: 0, zIndex: 600, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
       onClick={onClose}
     >
       <div
@@ -57,13 +56,15 @@ function ClaimModal({ item, user, onClose, onSuccess }) {
         style={{
           width: "100%", maxWidth: 400, background: T.surface,
           borderRadius: 20, border: `1px solid ${T.border}`,
-          padding: "28px 24px", boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          padding: "28px 24px", boxShadow: T.shadowLg,
           animation: "slideUp 0.25s ease both",
         }}
       >
         {done ? (
           <div style={{ textAlign: "center", padding: "16px 0" }}>
-            <div style={{ fontSize: 52, marginBottom: 12 }}>✅</div>
+            <div style={{ width: 52, height: 52, borderRadius: "50%", background: T.greenBg, border: `1px solid ${T.greenBord}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={T.green} strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
             <p style={{ fontWeight: 800, fontSize: 17, marginBottom: 6 }}>Claim Sent!</p>
             <p style={{ fontSize: 13, color: T.text2 }}>The owner will review your request and respond shortly.</p>
           </div>
@@ -78,12 +79,12 @@ function ClaimModal({ item, user, onClose, onSuccess }) {
             </div>
 
             {/* How it works */}
-            <div style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", borderRadius: T.r, padding: "12px 14px", marginBottom: 16 }}>
-              <p style={{ fontSize: 11, color: "#A78BFA", fontWeight: 700, marginBottom: 6 }}>HOW IT WORKS</p>
+            <div style={{ background: T.surfaceMd, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "12px 14px", marginBottom: 16 }}>
+              <p style={{ fontSize: 11, color: T.teal, fontWeight: 700, marginBottom: 6 }}>HOW IT WORKS</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {["You send a claim with a message", "Owner reviews and approves/rejects", "You get notified instantly"].map((s, i) => (
                   <p key={i} style={{ fontSize: 12, color: T.text2 }}>
-                    <span style={{ color: "#A78BFA", fontWeight: 700 }}>{i + 1}.</span> {s}
+                    <span style={{ color: "#0891B2", fontWeight: 700 }}>{i + 1}.</span> {s}
                   </p>
                 ))}
               </div>
@@ -116,7 +117,7 @@ function ClaimModal({ item, user, onClose, onSuccess }) {
                 width: "100%", padding: "14px", border: "none",
                 borderRadius: T.rMd, background: T.grad, color: "#fff",
                 fontFamily: T.font, fontWeight: 700, fontSize: 15, cursor: "pointer",
-                boxShadow: "0 4px 20px rgba(124,58,237,0.4)",
+                boxShadow: "0 4px 20px rgba(6,182,212,0.4)",
                 opacity: loading ? 0.7 : 1,
               }}
             >
@@ -132,7 +133,6 @@ function ClaimModal({ item, user, onClose, onSuccess }) {
 // ── Detail Sheet ──────────────────────────────────────────────────────
 function DetailSheet({ item, onClose, user, onClaim }) {
   if (!item) return null;
-  const emoji = EMOJI[item.category] || "📦";
   const score = bestScore(item);
   const isOwn = user && item.reportedBy?._id === user._id;
 
@@ -145,7 +145,7 @@ function DetailSheet({ item, onClose, user, onClaim }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: "100%", maxWidth: 480, margin: "0 auto",
-          background: "#13131A", borderRadius: "24px 24px 0 0",
+          background: T.surface, borderRadius: "24px 24px 0 0",
           border: `1px solid ${T.border}`, borderBottom: "none",
           padding: "24px 20px 40px",
           animation: "slideUp 0.3s cubic-bezier(0.16,1,0.3,1) both",
@@ -159,9 +159,11 @@ function DetailSheet({ item, onClose, user, onClaim }) {
           <div style={{
             width: 64, height: 64, borderRadius: T.rMd, flexShrink: 0,
             background: item.type === "lost" ? T.redBg : T.greenBg,
-            border: `1px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30,
-          }}>{emoji}</div>
+            border: `1.5px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <CategoryIcon category={item.category} color={item.type === "lost" ? T.red : T.green} size={30} />
+          </div>
           <div style={{ flex: 1 }}>
             <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 6 }}>{item.title}</h2>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -185,8 +187,8 @@ function DetailSheet({ item, onClose, user, onClaim }) {
 
         {/* AI Match Reasons */}
         {item.matches?.[0]?.reasons?.length > 0 && (
-          <div style={{ background: "rgba(124,58,237,0.06)", border: "1px solid rgba(124,58,237,0.15)", borderRadius: T.r, padding: "10px 14px", marginBottom: 16 }}>
-            <p style={{ fontSize: 11, color: "#A78BFA", fontWeight: 700, marginBottom: 6 }}>🤖 WHY THIS MATCHES</p>
+          <div style={{ background: "rgba(6,182,212,0.06)", border: "1px solid rgba(6,182,212,0.15)", borderRadius: T.r, padding: "10px 14px", marginBottom: 16 }}>
+            <p style={{ fontSize: 11, color: "#0891B2", fontWeight: 700, marginBottom: 6 }}>🤖 WHY THIS MATCHES</p>
             {item.matches[0].reasons.map((r, i) => (
               <p key={i} style={{ fontSize: 12, color: T.text2 }}>· {r}</p>
             ))}
@@ -196,14 +198,14 @@ function DetailSheet({ item, onClose, user, onClaim }) {
         {/* Details grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 24 }}>
           {[
-            ["📍 Location", getLocation(item)],
-            ["📅 Date", new Date(item.date || item.createdAt).toLocaleDateString()],
-            ["🏷️ Category", item.category],
-            ["📊 Status", item.status?.charAt(0).toUpperCase() + item.status?.slice(1)],
+            ["Location", getLocation(item)],
+            ["Date",     new Date(item.date || item.createdAt).toLocaleDateString()],
+            ["Category", item.category],
+            ["Status",   item.status?.charAt(0).toUpperCase() + item.status?.slice(1)],
           ].map(([label, value]) => (
             <div key={label} style={{ background: T.surfaceMd, padding: "12px", borderRadius: T.r, border: `1px solid ${T.border}` }}>
-              <p style={{ fontSize: 11, color: T.text3, fontWeight: 600, marginBottom: 4 }}>{label}</p>
-              <p style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{value}</p>
+              <p style={{ fontSize: 11, color: T.text3, fontWeight: 600, marginBottom: 4, letterSpacing: "0.04em" }}>{label.toUpperCase()}</p>
+              <p style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: T.text }}>{value}</p>
             </div>
           ))}
         </div>
@@ -216,10 +218,11 @@ function DetailSheet({ item, onClose, user, onClaim }) {
               width: "100%", padding: "15px", borderRadius: T.rMd, border: "none",
               background: T.grad, color: "#fff",
               fontFamily: T.font, fontWeight: 700, fontSize: 15, cursor: "pointer",
-              boxShadow: "0 4px 20px rgba(124,58,237,0.4)", marginBottom: 10,
+              boxShadow: "0 4px 20px rgba(8,145,178,0.35)", marginBottom: 10,
+              transition: "all 0.2s",
             }}
           >
-            📩 Send Claim Request
+            Send Claim Request
           </button>
         )}
 
@@ -228,10 +231,10 @@ function DetailSheet({ item, onClose, user, onClaim }) {
           <a href={`mailto:${item.contactEmail}?subject=Re: ${item.title} (CampusFind)`} style={{ textDecoration: "none", display: "block", marginBottom: 10 }}>
             <button style={{
               width: "100%", padding: "12px", borderRadius: T.rMd,
-              background: "transparent", border: `1px solid ${T.border}`,
+              background: T.surfaceMd, border: `1.5px solid ${T.border}`,
               color: T.text2, fontFamily: T.font, fontSize: 13, cursor: "pointer",
             }}>
-              ✉️ Direct Email (optional)
+              Contact via Email
             </button>
           </a>
         )}
@@ -360,9 +363,9 @@ export default function Browse({ setPage, user }) {
           {/* Search */}
           <div style={{
             display: "flex", alignItems: "center", gap: 10,
-            background: T.surface, border: `1px solid ${focused ? "rgba(124,58,237,0.5)" : T.border}`,
+            background: T.surface, border: `1px solid ${focused ? "rgba(6,182,212,0.5)" : T.border}`,
             borderRadius: T.rMd, padding: "12px 16px", marginBottom: 16,
-            boxShadow: focused ? "0 0 0 3px rgba(124,58,237,0.1)" : "none",
+            boxShadow: focused ? "0 0 0 3px rgba(6,182,212,0.1)" : "none",
             transition: "all 0.2s",
           }}>
             <svg viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2" width="18" height="18" strokeLinecap="round">
@@ -388,10 +391,10 @@ export default function Browse({ setPage, user }) {
                 fontFamily: T.font, fontSize: 13, fontWeight: type === t ? 700 : 500,
                 background: type === t ? T.grad : T.surface,
                 color: type === t ? "#fff" : T.text2,
-                boxShadow: type === t ? "0 4px 14px rgba(124,58,237,0.3)" : "none",
+                boxShadow: type === t ? "0 4px 14px rgba(8,145,178,0.3)" : "none",
                 border: type === t ? "none" : `1px solid ${T.border}`,
                 transition: "all 0.2s", textTransform: "capitalize",
-              }}>{t === "all" ? "All" : t === "lost" ? "🔍 Lost" : "📦 Found"}</button>
+              }}>{t === "all" ? "All" : t === "lost" ? "Lost" : "Found"}</button>
             ))}
 
             {/* Smart sort toggle */}
@@ -400,13 +403,13 @@ export default function Browse({ setPage, user }) {
               style={{
                 marginLeft: "auto", padding: "8px 14px", borderRadius: 999,
                 cursor: "pointer", fontFamily: T.font, fontSize: 12, fontWeight: 600,
-                background: sortBy === "matches" ? "rgba(245,158,11,0.12)" : T.surface,
-                color: sortBy === "matches" ? "#FCD34D" : T.text2,
-                border: `1px solid ${sortBy === "matches" ? "rgba(245,158,11,0.35)" : T.border}`,
+                background: sortBy === "matches" ? T.amberBg : T.surface,
+                color: sortBy === "matches" ? T.amber : T.text2,
+                border: `1.5px solid ${sortBy === "matches" ? T.amberBord : T.border}`,
                 transition: "all 0.2s",
               }}
             >
-              {sortBy === "matches" ? "⚡ By Match" : "🕐 By Recent"}
+              {sortBy === "matches" ? "By Match Score" : "By Recent"}
             </button>
           </div>
 
@@ -416,9 +419,9 @@ export default function Browse({ setPage, user }) {
               <button key={c} onClick={() => setCat(c)} style={{
                 padding: "7px 14px", borderRadius: 999, border: "none",
                 whiteSpace: "nowrap", cursor: "pointer", fontFamily: T.font, fontSize: 12, fontWeight: cat === c ? 700 : 500,
-                background: cat === c ? "rgba(124,58,237,0.15)" : T.surface,
-                color: cat === c ? "#A78BFA" : T.text2,
-                border: `1px solid ${cat === c ? "rgba(124,58,237,0.4)" : T.border}`,
+                background: cat === c ? "rgba(6,182,212,0.15)" : T.surface,
+                color: cat === c ? "#0891B2" : T.text2,
+                border: `1px solid ${cat === c ? "rgba(6,182,212,0.4)" : T.border}`,
                 transition: "all 0.15s",
               }}>{c}</button>
             ))}
@@ -439,14 +442,15 @@ export default function Browse({ setPage, user }) {
             </div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
-              <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>🔍</div>
-              <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>No items found</p>
+              <div style={{ width: 52, height: 52, borderRadius: 14, background: T.surfaceMd, border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <p style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: T.text }}>No items found</p>
               <p style={{ color: T.text2, fontSize: 13 }}>Try different keywords or filters</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {filtered.map(item => {
-                const emoji = EMOJI[item.category] || "📦";
                 const score = bestScore(item);
                 return (
                   <Card key={item._id} hover onClick={() => setSel(item)} padding="16px">
@@ -454,30 +458,26 @@ export default function Browse({ setPage, user }) {
                       <div style={{
                         width: 52, height: 52, borderRadius: T.rMd, flexShrink: 0,
                         background: item.type === "lost" ? T.redBg : T.greenBg,
-                        border: `1px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
-                        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24,
-                      }}>{emoji}</div>
+                        border: `1.5px solid ${item.type === "lost" ? T.redBord : T.greenBord}`,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <CategoryIcon category={item.category} color={item.type === "lost" ? T.red : T.green} size={24} />
+                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                           <Badge type={item.type} />
                           <span style={{ fontSize: 11, color: T.text3 }}>{timeAgo(item.createdAt || item.date)}</span>
-                          {/* ⚡ Match score badge */}
                           {score >= 25 && (
-                            <span style={{
-                              background: `${scoreColor(score)}18`,
-                              color: scoreColor(score),
-                              border: `1px solid ${scoreColor(score)}35`,
-                              padding: "1px 7px", borderRadius: 999,
-                              fontSize: 10, fontWeight: 800,
-                            }}>⚡ {score}%</span>
+                            <ScorePill score={score} />
                           )}
                         </div>
-                        <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</p>
-                        <p style={{ fontSize: 12, color: T.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          📍 {getLocation(item)}
+                        <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: T.text }}>{item.title}</p>
+                        <p style={{ fontSize: 12, color: T.text2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 3 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                          {getLocation(item)}
                         </p>
                       </div>
-                      <span style={{ color: T.text3, fontSize: 20, flexShrink: 0 }}>›</span>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.text3} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6"/></svg>
                     </div>
                   </Card>
                 );

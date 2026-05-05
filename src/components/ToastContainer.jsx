@@ -16,7 +16,7 @@ export default function ToastContainer() {
   const cfg = {
     success: { bg:"rgba(34,197,94,0.15)",  border:"rgba(34,197,94,0.3)",  color:"#4ADE80", icon:"✅" },
     error:   { bg:"rgba(239,68,68,0.15)",   border:"rgba(239,68,68,0.3)",   color:"#F87171", icon:"❌" },
-    info:    { bg:"rgba(59,130,246,0.15)",  border:"rgba(59,130,246,0.3)",  color:"#60A5FA", icon:"ℹ️" },
+    info:    { bg:"rgba(59,130,246,0.15)",  border:"rgba(59,130,246,0.3)",  color:"#06B6D4", icon:"ℹ️" },
   };
 
   return (

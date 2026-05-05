@@ -12,11 +12,11 @@ export default function AILogo({ size = 36, style = {} }) {
       <defs>
         <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#7C3AED" />
-          <stop offset="100%" stopColor="#2563EB" />
+          <stop offset="100%" stopColor="#0E7490" />
         </linearGradient>
         <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#A78BFA" />
-          <stop offset="100%" stopColor="#60A5FA" />
+          <stop offset="0%" stopColor="#0891B2" />
+          <stop offset="100%" stopColor="#06B6D4" />
         </linearGradient>
       </defs>
 

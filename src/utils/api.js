@@ -71,6 +71,15 @@ export const authAPI = {
 
   // GET /api/auth/me  — returns logged-in user from token
   me: () => api.get("/auth/me"),
+
+  // PATCH /api/auth/me — updates logged-in user
+  updateProfile: (data) => api.patch("/auth/me", data),
+
+  // POST /api/auth/forgot-password
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+
+  // PUT /api/auth/reset-password/:token
+  resetPassword: (token, password) => api.put(`/auth/reset-password/${token}`, { password }),
 };
 
 // ═══════════════════════════════════════════════════════════════════════

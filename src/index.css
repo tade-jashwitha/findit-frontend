@@ -1,59 +1,136 @@
-/* src/index.css — CampusFind Global Styles */
+/* src/index.css — CampusFind Design System v4 — Light Theme */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; font-size: 16px; scroll-behavior: smooth; }
 
-html { -webkit-text-size-adjust: 100%; font-size: 16px; }
+/* ── Design Tokens (CSS Variables) ─────────────────────────────────── */
+:root {
+  --bg:        #F0F9FF;
+  --surface:   #FFFFFF;
+  --surface-2: #F8FAFC;
+  --surface-3: #EFF6FF;
+  --border:    #DBEAFE;
+  --border-2:  #BAE6FD;
+  --text:      #0F172A;
+  --text-2:    #475569;
+  --text-3:    #94A3B8;
+  --teal:      #0891B2;
+  --teal-light:#E0F2FE;
+  --teal-mid:  #BAE6FD;
+  --cyan:      #06B6D4;
+  --cyan-dark: #0E7490;
+  --grad:      linear-gradient(135deg, #0891B2 0%, #06B6D4 100%);
+  --shadow-sm: 0 1px 3px rgba(14,116,144,0.08), 0 1px 2px rgba(14,116,144,0.04);
+  --shadow-md: 0 4px 16px rgba(14,116,144,0.10), 0 2px 6px rgba(14,116,144,0.06);
+  --shadow-lg: 0 12px 40px rgba(14,116,144,0.14), 0 4px 12px rgba(14,116,144,0.08);
+  --radius:    12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+}
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #0A0A0F;
-  color: #F4F4FF;
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  min-height: 100vh;
 }
 
-/* ── Scrollbar ─────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+/* ── Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-thumb { background: #BAE6FD; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #7DD3FC; }
 
-/* ── Selection ─────────────────────────────────────────────────────── */
-::selection { background: rgba(124,58,237,0.35); color: #fff; }
+/* ── Selection ──────────────────────────────────────────────────────── */
+::selection { background: #BAE6FD; color: #0E7490; }
 
-/* ── Global keyframes ───────────────────────────────────────────────── */
-@keyframes fadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeIn   { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp  { from { transform: translateY(100%); } to { transform: translateY(0); } }
-@keyframes float    { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
-@keyframes pulse    { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-@keyframes spin     { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes shimmer  {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
+/* ── Animations (connected system) ──────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-7px); }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.92); }
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
 }
 @keyframes glow {
-  0%,100% { box-shadow: 0 0 20px rgba(124,58,237,0.3); }
-  50%      { box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(37,99,235,0.3); }
+  0%, 100% { box-shadow: 0 0 12px rgba(6,182,212,0.25); }
+  50%       { box-shadow: 0 0 28px rgba(6,182,212,0.5); }
 }
-@keyframes logoSpin {
-  0%   { transform: rotate(0deg) scale(1); }
-  50%  { transform: rotate(180deg) scale(1.05); }
-  100% { transform: rotate(360deg) scale(1); }
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ripple {
+  0%   { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+@keyframes barFill {
+  from { width: 0%; }
+  to   { width: var(--bar-w, 100%); }
+}
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%            { transform: translateY(-8px); }
+}
+@keyframes waveMove {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
-/* ── Utility ────────────────────────────────────────────────────────── */
+/* ── Gradient text utility ──────────────────────────────────────────── */
 .grad-text {
-  background: linear-gradient(135deg, #A78BFA 0%, #60A5FA 100%);
+  background: var(--grad);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-input, textarea, select, button {
-  font-family: inherit;
-}
+/* ── Card entrance animation helper ─────────────────────────────────── */
+.anim-card { animation: fadeUp 0.45s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-card:nth-child(1) { animation-delay: 0.00s; }
+.anim-card:nth-child(2) { animation-delay: 0.07s; }
+.anim-card:nth-child(3) { animation-delay: 0.14s; }
+.anim-card:nth-child(4) { animation-delay: 0.21s; }
+.anim-card:nth-child(5) { animation-delay: 0.28s; }
 
-input::placeholder, textarea::placeholder { color: #4A4A5E; }
+/* ── Button press effect ─────────────────────────────────────────────── */
+.btn-press:active { transform: scale(0.97); }
+
+/* ── Input base ──────────────────────────────────────────────────────── */
+input, textarea, select, button { font-family: inherit; }
+input::placeholder, textarea::placeholder { color: var(--text-3); }
+
+/* ── Page transition wrapper ─────────────────────────────────────────── */
+.page-enter { animation: fadeUp 0.35s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* ── Focus ring ──────────────────────────────────────────────────────── */
+:focus-visible { outline: 2px solid #06B6D4; outline-offset: 2px; }
